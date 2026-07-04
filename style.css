@@ -2105,7 +2105,7 @@ td:hover .planning-add-btn {
 .footer-logo {
     height: 28px;
     width: auto;
-    filter: brightness(0) saturate(100%) invert(28%) sepia(86%) saturate(1600%) hue-rotate(235deg) brightness(95%) contrast(95%);
+    filter: brightness(0) saturate(100%) invert(37%) sepia(93%) saturate(5437%) hue-rotate(239deg) brightness(96%) contrast(102%);
     opacity: 0.85;
 }
 
