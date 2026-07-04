@@ -13,9 +13,14 @@ if (SUPABASE_URL && SUPABASE_ANON_KEY && typeof window !== 'undefined' && window
         useSupabase = false;
     } else {
         try {
-            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                auth: {
+                    storage: window.sessionStorage,
+                    persistSession: true
+                }
+            });
             useSupabase = true;
-            console.log("Supabase connecté avec succès !");
+            console.log("Supabase connecté avec succès (sessionStorage) !");
         } catch (e) {
             console.error("Erreur d'initialisation de Supabase :", e);
             useSupabase = false;

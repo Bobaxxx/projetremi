@@ -15,7 +15,12 @@
     <script>
         const SUPABASE_URL = "https://hxnfcqrykmbsqqwugbxc.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_9SaZgJq1R_Jo7uI3GjC0TA_9kSRZWn5";
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                storage: window.sessionStorage,
+                persistSession: true
+            }
+        });
 
         // Hide body until session status is determined
         document.documentElement.style.visibility = 'hidden';

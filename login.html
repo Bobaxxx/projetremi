@@ -497,7 +497,12 @@
         // Supabase configuration
         const SUPABASE_URL = "https://hxnfcqrykmbsqqwugbxc.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_9SaZgJq1R_Jo7uI3GjC0TA_9kSRZWn5";
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                storage: window.sessionStorage,
+                persistSession: true
+            }
+        });
 
         // Check active session
         (async () => {
