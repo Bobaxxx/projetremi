@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alobees Admin - Gestion de Planning & Pointage</title>
+    <!-- Google Fonts: Inter & Outfit for modern SaaS look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Supabase client check to prevent page content flashing -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = "https://hxnfcqrykmbsqqwugbxc.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_9SaZgJq1R_Jo7uI3GjC0TA_9kSRZWn5";
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Hide body until session status is determined
+        document.documentElement.style.visibility = 'hidden';
+
+        (async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                window.location.replace('login.html');
+            } else {
+                document.documentElement.style.visibility = '';
+            }
+        })();
+    </script>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Mobile Top Navigation Header -->
+        <header class="mobile-header">
+            <button class="hamburger-btn" id="btn-toggle-sidebar" aria-label="Menu">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            <div class="mobile-brand" id="logo-mobile-click" style="cursor: pointer;">
+                <img src="logobatir.png" alt="LogoBatir" style="height: 32px; filter: brightness(0) saturate(100%) invert(28%) sepia(86%) saturate(1600%) hue-rotate(235deg) brightness(95%) contrast(95%);">
+            </div>
+            <button class="btn-logout-mobile" id="btn-logout-mobile" style="background: none; border: none; color: var(--gray-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px;">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+            </button>
+        </header>
+
+        <!-- Mobile Sidebar Backdrop Overlay -->
+        <div class="sidebar-overlay" id="mobile-sidebar-overlay"></div>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-brand" id="logo-sidebar-click" style="cursor: pointer;">
+                <img src="logobatir.png" alt="LogoBatir" style="height: 38px; width: auto; filter: brightness(0) saturate(100%) invert(28%) sepia(86%) saturate(1600%) hue-rotate(235deg) brightness(95%) contrast(95%);">
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="#dashboard" class="nav-item active" data-tab="dashboard">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7" rx="1"/>
+                        <rect x="14" y="3" width="7" height="7" rx="1"/>
+                        <rect x="14" y="14" width="7" height="7" rx="1"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1"/>
+                    </svg>
+                    <span>Accueil</span>
+                </a>
+                <a href="#memos" class="nav-item" data-tab="memos">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span>Mémos</span>
+                    <span class="badge badge-accent">12</span>
+                </a>
+                <a href="#users" class="nav-item" data-tab="users">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <span>Utilisateurs</span>
+                </a>
+                <a href="#chantiers" class="nav-item" data-tab="chantiers">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+                        <path d="M13 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+                        <path d="M13 19l-9 0" />
+                        <path d="M4 15l9 0" />
+                        <path d="M8 12v-5h2a3 3 0 0 1 3 3v5" />
+                        <path d="M5 15v-2a1 1 0 0 1 1 -1h7" />
+                        <path d="M21.12 9.88l-3.12 -4.88l-5 5" />
+                        <path d="M21.12 9.88a3 3 0 0 1 -2.12 5.12a3 3 0 0 1 -2.12 -.88l4.24 -4.24z" />
+                    </svg>
+                    <span>Chantiers</span>
+                </a>
+                <a href="#planning" class="nav-item" data-tab="planning">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    <span>Planning</span>
+                </a>
+                <a href="#hours" class="nav-item" data-tab="hours">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    <span>Feuilles d'heures</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-profile" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div class="avatar avatar-sm avatar-purple">J</div>
+                        <div class="user-info">
+                            <span class="user-name" id="profile-name">Jules Marcon</span>
+                            <span class="user-role" id="profile-role">Administrateur</span>
+                        </div>
+                    </div>
+                    <button id="btn-logout-desktop" title="Se déconnecter" style="background: none; border: none; color: var(--gray-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 6px; transition: color 0.15s; border-radius: 6px;">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Wrapper -->
+        <div class="main-wrapper">
+            <!-- Topbar / Header -->
+            <header class="topbar">
+                <div class="header-left">
+                    <h1 class="welcome-text">Bonjour Jules</h1>
+                    <span class="week-badge" id="current-week-display">Semaine --</span>
+                </div>
+                <div class="header-right">
+                    <div class="time-stamp" id="realtime-clock">--:--</div>
+                    <div class="notification-bell">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                        </svg>
+                        <span class="bell-indicator"></span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Tab Content Pane -->
+            <main class="content-pane">
+                
+                <!-- PAGE 1: D'ACCUEIL (DASHBOARD) -->
+                <section id="tab-dashboard" class="tab-content active">
+                    <div class="dashboard-grid">
+                        
+                        <!-- Card 1: Chantiers planifiés aujourd'hui -->
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3 class="card-title">Chantiers planifiés aujourd'hui</h3>
+                                <span class="card-icon blue">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                        <polyline points="9 22 9 12 15 12 15 22"/>
+                                    </svg>
+                                </span>
+                            </div>
+                            <div class="card-body" id="today-chantiers-container">
+                                <!-- Populated dynamically or shows "Aucun chantier prévu" -->
+                                <div class="empty-state">Aucun chantier prévu</div>
+                            </div>
+                        </div>
+
+                        <!-- Card 2: Taux d'occupation -->
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3 class="card-title">Taux d'occupation</h3>
+                                <span class="card-icon purple">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="9" cy="7" r="4"/>
+                                    </svg>
+                                </span>
+                            </div>
+                            <div class="card-body occupation-body">
+                                <div class="occupation-value">77%</div>
+                                <div class="badge badge-purple">Employé</div>
+                                <p class="card-desc">Taux moyen d'affectation des compagnons sur les chantiers actifs cette semaine.</p>
+                            </div>
+                        </div>
+
+                        <!-- Card 3: Dernières publications -->
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h3 class="card-title">Dernières publications</h3>
+                                <span class="card-icon green">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                    </svg>
+                                </span>
+                            </div>
+                            <div class="card-body scrollable-activity">
+                                <div class="activity-feed" id="activity-feed-container">
+                                    <!-- Populated dynamically -->
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Lower Section: Avancement des chantiers -->
+                    <div class="section-container">
+                        <div class="section-header">
+                            <h2 class="section-title">Avancement des chantiers</h2>
+                        </div>
+                        <div class="progress-list-container" id="project-progress-container">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PAGE 2: UTILISATEURS -->
+                <section id="tab-users" class="tab-content">
+                    <div class="toolbar">
+                        <div class="search-box">
+                            <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                            <input type="text" id="search-users" placeholder="Rechercher un utilisateur (nom, rôle...)" class="search-input">
+                        </div>
+                        <button class="btn btn-primary" id="btn-open-user-modal">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            Ajouter un utilisateur
+                        </button>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="data-table" id="users-table">
+                            <thead>
+                                <tr>
+                                    <th>Utilisateur</th>
+                                    <th>Rôle</th>
+                                    <th>Type</th>
+                                    <th>Statut</th>
+                                    <th>Téléphone</th>
+                                    <th style="width: 80px; text-align: center;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- PAGE 2.5: USER DETAIL VIEW -->
+                <section id="tab-user-detail" class="tab-content" style="flex-direction: column; height: 100%; overflow: hidden;">
+                    <!-- Header with name, status and role -->
+                    <div id="user-detail-header" style="margin-bottom: 20px;">
+                        <!-- Generated dynamically -->
+                    </div>
+
+                    <!-- Dynamic content area -->
+                    <div id="user-detail-content" style="flex: 1; overflow-y: auto; padding-right: 4px;">
+                        <!-- Generated dynamically -->
+                    </div>
+                </section>
+
+                <!-- PAGE 3: CHANTIERS -->
+                <section id="tab-chantiers" class="tab-content">
+                    <div class="toolbar">
+                        <div class="search-box">
+                            <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                            <input type="text" id="search-chantiers" placeholder="Rechercher un chantier..." class="search-input">
+                        </div>
+                        <button class="btn btn-primary" id="btn-open-chantier-modal">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            Créer un chantier
+                        </button>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="data-table" id="chantiers-table">
+                            <thead>
+                                <tr>
+                                    <th>Chantier</th>
+                                    <th>Client</th>
+                                    <th>Adresse</th>
+                                    <th>Statut</th>
+                                    <th>Budget d'heures</th>
+                                    <th style="width: 80px; text-align: center;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="chantiers-table-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- PAGE 3.5: CHANTIER DETAIL DETAIL VIEW -->
+                <section id="tab-chantier-detail" class="tab-content" style="flex-direction: column; height: 100%; overflow: hidden;">
+                    <!-- Header with title, status and buttons -->
+                    <div id="chantier-detail-header" style="margin-bottom: 20px;">
+                        <!-- Generated dynamically -->
+                    </div>
+
+                    <!-- Tabs bar -->
+                    <div class="chantier-detail-tabs-bar" style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                        <button class="subtab-btn active" id="subtab-btn-resume" onclick="switchChantierSubTab('resume')">Résumé</button>
+                        <button class="subtab-btn" id="subtab-btn-documents" onclick="switchChantierSubTab('documents')">Documents</button>
+                        <button class="subtab-btn" id="subtab-btn-planning" onclick="switchChantierSubTab('planning')">Planning</button>
+                        <button class="subtab-btn" id="subtab-btn-hours" onclick="switchChantierSubTab('hours')">Feuilles d'heures</button>
+                        <button class="subtab-btn" id="subtab-btn-memos" onclick="switchChantierSubTab('memos')">Mémos</button>
+                    </div>
+
+                    <!-- Dynamic content area -->
+                    <div id="chantier-detail-content" style="flex: 1; overflow-y: auto; padding-right: 4px;">
+                        <!-- Generated dynamically -->
+                    </div>
+                </section>
+
+                <!-- PAGE 4: PLANNING -->
+                <section id="tab-planning" class="tab-content">
+                    <!-- Page Header Title and Beta Badge -->
+                    <div class="planning-header-top">
+                        <div class="planning-title-badge-group">
+                            <h2 class="planning-main-title">Planning</h2>
+                            <span class="view-badge badge-gray" style="text-transform: none; font-weight: normal; margin-left: 10px;">Classique</span>
+                            <span class="badge badge-accent" style="margin-left: 6px;">Beta</span>
+                            <span class="planning-report-issue" style="margin-left: 16px; font-size: 13px; color: var(--primary); cursor: pointer; text-decoration: underline;">Signaler une anomalie</span>
+                        </div>
+                    </div>
+
+                    <!-- View Switch (Chantiers vs Utilisateurs) -->
+                    <div class="planning-switch-container">
+                        <div class="planning-type-toggle">
+                            <button class="type-toggle-btn active" id="plan-toggle-chantiers">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
+                                    <path d="M4 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+                                    <path d="M13 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+                                    <path d="M13 19l-9 0" />
+                                    <path d="M4 15l9 0" />
+                                    <path d="M8 12v-5h2a3 3 0 0 1 3 3v5" />
+                                    <path d="M5 15v-2a1 1 0 0 1 1 -1h7" />
+                                    <path d="M21.12 9.88l-3.12 -4.88l-5 5" />
+                                    <path d="M21.12 9.88a3 3 0 0 1 -2.12 5.12a3 3 0 0 1 -2.12 -.88l4.24 -4.24z" />
+                                </svg>
+                                Chantiers
+                            </button>
+                            <button class="type-toggle-btn" id="plan-toggle-users">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="9" cy="7" r="4"/>
+                                </svg>
+                                Utilisateurs
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filters and navigation bandeau -->
+                    <div class="planning-filter-bar">
+                        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                            <select id="planning-chantier-filter" class="form-select" style="font-size: 13px; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border-color); background-color: white; min-width: 180px;">
+                                <option value="all">Tous les chantiers (Nom)</option>
+                            </select>
+                            <select id="planning-status-filter" class="form-select" style="font-size: 13px; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border-color); background-color: white; min-width: 200px;">
+                                <option value="all">Tous les chantiers (État)</option>
+                                <option value="not_fully">Chantiers pas complètement planifiés</option>
+                                <option value="fully">Complètement planifiés</option>
+                                <option value="planned">Planifiés</option>
+                                <option value="unplanned">Non planifiés</option>
+                            </select>
+                        </div>
+                        
+                        <div class="planning-view-modes">
+                            <button class="view-mode-btn active" data-mode="week">Semaine</button>
+                            <button class="view-mode-btn" data-mode="month">Mois</button>
+                            <button class="view-mode-btn" data-mode="quarter">Trimestre</button>
+                        </div>
+
+                        <div class="planning-nav-controls">
+                            <span class="planning-current-date-range" id="planning-range-display">Semaine 27 | 29 juin - 5 juillet 2026</span>
+                            <button class="btn btn-secondary btn-icon" id="plan-prev-week" title="Semaine précédente" style="border: none; padding: 4px;">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="15 18 9 12 15 6"/>
+                                </svg>
+                            </button>
+                            <button class="btn btn-secondary" id="plan-today" style="padding: 4px 10px; font-size: 13px;">Aujourd'hui</button>
+                            <button class="btn btn-secondary btn-icon" id="plan-next-week" title="Semaine suivante" style="border: none; padding: 4px;">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="9 18 15 12 9 6"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Planning Grid Layout -->
+                    <div class="planning-grid-wrapper">
+                        <table class="planning-table">
+                            <thead id="planning-table-thead">
+                                <!-- Rebuilt dynamically in script.js -->
+                            </thead>
+                            <tbody id="planning-table-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- MOCKED PAGES PLACEHOLDERS -->
+                <section id="tab-memos" class="tab-content" style="flex-direction: column; gap: 20px;">
+                    <div class="planning-header" style="margin-bottom: 20px;">
+                        <div class="planning-header-top">
+                            <div class="planning-title-badge-group">
+                                <h2 class="planning-main-title">Mémos</h2>
+                                <span class="badge badge-accent" style="margin-left: 10px; background-color: #ede9fe; color: var(--primary);">Général</span>
+                            </div>
+                            <button class="btn btn-primary" id="btn-open-memo-modal" style="background-color: var(--primary); display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; padding: 10px 16px; border-radius: 8px; border: none; color: white; cursor: pointer;">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <line x1="12" y1="5" x2="12" y2="19"/>
+                                    <line x1="5" y1="12" x2="19" y2="12"/>
+                                </svg>
+                                Créer un mémo
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Memos List Grid -->
+                    <div id="memos-grid-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; overflow-y: auto; flex: 1; padding-bottom: 30px; text-align: left;">
+                        <!-- Memos render dynamically -->
+                    </div>
+                </section>
+
+                <!-- MODAL: CREATE MEMO -->
+                <div class="modal-backdrop" id="memo-modal">
+                    <div class="modal" style="width: 500px; max-width: 95vw; border-radius: 12px; overflow: hidden; text-align: left;">
+                        <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding: 20px 24px; display: flex; justify-content: space-between; align-items: center;">
+                            <h3 class="modal-title" id="memo-modal-title" style="font-family: var(--font-heading); font-size: 18px; font-weight: 700; color: var(--primary);">Créer un mémo</h3>
+                            <button class="modal-close" id="btn-close-memo-modal" style="font-size: 24px; cursor: pointer; color: var(--gray-muted); background: none; border: none;">&times;</button>
+                        </div>
+                        <form id="create-memo-form" style="padding: 24px; display: flex; flex-direction: column; gap: 20px; background: white;">
+                            <input type="hidden" id="edit-memo-id">
+                            
+                            <div class="form-group" style="display: flex; flex-direction: column; gap: 8px;">
+                                <label for="memo-chantier-select" class="form-label" style="font-weight: 600; font-size: 13px; color: var(--text-primary);">Chantier *</label>
+                                <select id="memo-chantier-select" class="form-select" required style="width: 100%; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13.5px; background-color: white;">
+                                    <option value="" disabled selected>Veuillez sélectionner un chantier</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" style="display: flex; flex-direction: column; gap: 8px;">
+                                <label for="memo-desc-textarea" class="form-label" style="font-weight: 600; font-size: 13px; color: var(--text-primary);">Description *</label>
+                                <textarea id="memo-desc-textarea" class="form-textarea" rows="4" required placeholder="Ajouter une note ici..." style="width: 100%; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13.5px; resize: vertical;"></textarea>
+                            </div>
+
+                            <div class="form-group" style="display: flex; flex-direction: column; gap: 8px;">
+                                <label for="memo-priority-select" class="form-label" style="font-weight: 600; font-size: 13px; color: var(--text-primary);">Priorité *</label>
+                                <select id="memo-priority-select" class="form-select" required style="width: 100%; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13.5px; background-color: white;">
+                                    <option value="Basse">Basse</option>
+                                    <option value="Moyenne" selected>Moyenne</option>
+                                    <option value="Haute">Haute</option>
+                                </select>
+                            </div>
+
+                            <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px;">
+                                <button type="button" class="btn btn-secondary" id="btn-cancel-memo-modal" style="padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 13.5px; border: 1px solid var(--border-color); background: none;">Annuler</button>
+                                <button type="submit" class="btn btn-primary" style="background-color: var(--primary); padding: 10px 16px; border-radius: 6px; cursor: pointer; color: white; border: none; font-weight: 600; font-size: 13.5px;">Confirmer</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <section id="tab-hours" class="tab-content">
+                    <!-- Hours Page Header -->
+                    <div class="planning-header" style="margin-bottom: 20px;">
+                        <div class="planning-header-top">
+                            <div class="planning-title-badge-group">
+                                <h2 class="planning-main-title">Feuilles d'heures</h2>
+                                <span class="badge badge-accent" style="margin-left: 10px;">Validé</span>
+                            </div>
+                            <button class="btn btn-primary btn-icon" style="padding: 6px 14px; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; height: auto; background: var(--accent);" id="btn-export-hours">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="7 10 12 15 17 10"/>
+                                    <line x1="12" y1="15" x2="12" y2="3"/>
+                                </svg>
+                                Exporter
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Week Selector bar -->
+                    <div class="hours-week-nav-container">
+                        <!-- Left Week Indicator (hidden on mobile) -->
+                        <div class="week-nav-side-label" id="hours-prev-week-label">
+                            <div style="font-weight: 500;">22 - 28 Juin</div>
+                            <div style="font-size: 11px;">Semaine 26</div>
+                        </div>
+
+                        <!-- Center Active Week -->
+                        <div class="week-nav-center">
+                            <button class="btn btn-secondary btn-icon" id="hours-prev-week" style="border: 1px solid var(--border-color); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: #ff6b4a; padding: 0; flex-shrink: 0;">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3">
+                                    <polyline points="15 18 9 12 15 6"/>
+                                </svg>
+                            </button>
+                            <div style="text-align: center; min-width: 0;">
+                                <div id="hours-active-week-label" style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: var(--text-primary); white-space: nowrap;">29 Juin - 5 Juillet 2026</div>
+                                <div id="hours-active-week-sub" style="font-size: 12px; color: var(--gray-muted); font-weight: 500; margin-top: 2px;">Semaine 27</div>
+                            </div>
+                            <button class="btn btn-secondary btn-icon" id="hours-next-week" style="border: 1px solid var(--border-color); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: #ff6b4a; padding: 0; flex-shrink: 0;">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3">
+                                    <polyline points="9 18 15 12 9 6"/>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- Right Week Indicator (hidden on mobile) -->
+                        <div class="week-nav-side-label" id="hours-next-week-label" style="text-align: right;">
+                            <div style="font-weight: 500;">6 - 12 Juillet</div>
+                            <div style="font-size: 11px;">Semaine 28</div>
+                        </div>
+                    </div>
+
+                    <!-- Toolbar & Filters -->
+                    <div class="hours-toolbar">
+                        <!-- View Toggle: Chantiers vs. Utilisateurs -->
+                        <div class="planning-type-toggle" style="margin-bottom: 0;">
+                            <button class="type-toggle-btn active" id="hours-toggle-chantiers">
+                                <svg class="nav-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; display: inline; vertical-align: middle;">
+                                    <path d="M4 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+                                    <path d="M13 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+                                    <path d="M13 19l-9 0" />
+                                    <path d="M4 15l9 0" />
+                                    <path d="M8 12v-5h2a3 3 0 0 1 3 3v5" />
+                                    <path d="M5 15v-2a1 1 0 0 1 1 -1h7" />
+                                    <path d="M21.12 9.88l-3.12 -4.88l-5 5" />
+                                    <path d="M21.12 9.88a3 3 0 0 1 -2.12 5.12a3 3 0 0 1 -2.12 -.88l4.24 -4.24z" />
+                                </svg>
+                                Chantiers
+                            </button>
+                            <button class="type-toggle-btn" id="hours-toggle-users">
+                                <svg class="nav-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; display: inline; vertical-align: middle;">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="9" cy="7" r="4"/>
+                                </svg>
+                                Utilisateurs
+                            </button>
+                        </div>
+
+                        <!-- Dropdown Select Filters -->
+                        <div class="hours-filters-row">
+                            <select id="hours-select-filter" class="form-select hours-filter-select">
+                                <option value="all">Tous les chantiers</option>
+                            </select>
+                            <select id="hours-status-filter" class="form-select hours-filter-select">
+                                <option value="all">Tous les chantiers (État)</option>
+                                <option value="not_fully">Chantiers pas complètement planifiés</option>
+                                <option value="fully">Complètement planifiés</option>
+                                <option value="planned">Planifiés</option>
+                                <option value="unplanned">Non planifiés</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Hours Spreadsheet Table -->
+                    <div class="hours-table-scroll-wrapper">
+                        <table class="hours-table">
+                            <thead id="hours-table-thead">
+                                <!-- Generated Dynamically -->
+                            </thead>
+                            <tbody id="hours-table-tbody">
+                                <!-- Generated Dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+            </main>
+
+            <!-- Global Footer - visible on all pages -->
+            <footer class="app-footer">
+                <div class="footer-inner">
+                    <!-- Left: Logo + baseline -->
+                    <div class="footer-brand">
+                        <img src="logobatir.png" alt="LogoBatir" class="footer-logo">
+                        <span class="footer-tagline">Solution de gestion de chantiers</span>
+                    </div>
+
+                    <!-- Center: Links -->
+                    <nav class="footer-links">
+                        <a href="#" class="footer-link">Aide</a>
+                        <span class="footer-divider">·</span>
+                        <a href="#" class="footer-link">Confidentialité</a>
+                        <span class="footer-divider">·</span>
+                        <a href="#" class="footer-link">Conditions</a>
+                        <span class="footer-divider">·</span>
+                        <a href="#" class="footer-link">Contact</a>
+                    </nav>
+
+                    <!-- Right: Copyright -->
+                    <div class="footer-copy">
+                        <span>© <span id="footer-year"></span> LogoBatir. Tous droits réservés.</span>
+                    </div>
+                </div>
+            </footer>
+
+        </div>
+    </div>
+
+    <!-- MODAL: ADD USER -->
+    <div class="modal-backdrop" id="user-modal">
+        <div class="modal modal-large">
+            <div class="modal-header">
+                <h3 class="modal-title" style="font-family: var(--font-heading); font-size: 18px; font-weight: 700; color: var(--primary);">Ajouter un nouvel utilisateur</h3>
+                <button class="modal-close" id="btn-close-user-modal">&times;</button>
+            </div>
+            <form id="add-user-form">
+                <div class="modal-body-scroll">
+                    <div class="chantier-form-grid">
+
+                        <!-- Left Side: Image upload, Color, Status -->
+                        <div class="chantier-form-left">
+                            <div class="image-uploader">
+                                <div class="uploader-icon">
+                                    <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="17 8 12 3 7 8"/>
+                                        <line x1="12" y1="3" x2="12" y2="15"/>
+                                    </svg>
+                                </div>
+                                <p class="uploader-text">Glissez et déposez votre image ici</p>
+                                <span class="uploader-or">ou</span>
+                                <button type="button" class="btn-uploader-file" style="background-color: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 11px; cursor: pointer;">Recherchez sur votre ordinateur</button>
+                            </div>
+
+                            <div class="form-group" style="margin-top: 20px;">
+                                <label class="form-label">Couleur de l'utilisateur</label>
+                                <div class="color-palette-picker" id="add-user-color-picker">
+                                    <span class="color-dot picker-dot selected" data-color="#10b981" style="background-color: #10b981;"></span>
+                                    <span class="color-dot picker-dot" data-color="#34d399" style="background-color: #34d399;"></span>
+                                    <span class="color-dot picker-dot" data-color="#22c55e" style="background-color: #22c55e;"></span>
+                                    <span class="color-dot picker-dot" data-color="#84cc16" style="background-color: #84cc16;"></span>
+                                    <span class="color-dot picker-dot" data-color="#eab308" style="background-color: #eab308;"></span>
+                                    <span class="color-dot picker-dot" data-color="#f97316" style="background-color: #f97316;"></span>
+                                    <span class="color-dot picker-dot" data-color="#ef4444" style="background-color: #ef4444;"></span>
+                                    <span class="color-dot picker-dot" data-color="#a855f7" style="background-color: #a855f7;"></span>
+                                    <span class="color-dot picker-dot" data-color="#c084fc" style="background-color: #c084fc;"></span>
+                                    <span class="color-dot picker-dot" data-color="#4f46e5" style="background-color: #4f46e5;"></span>
+                                    <span class="color-dot picker-dot" data-color="#3b82f6" style="background-color: #3b82f6;"></span>
+                                    <span class="color-dot picker-dot" data-color="#22d3ee" style="background-color: #22d3ee;"></span>
+                                    <span class="color-dot picker-dot" data-color="#14b8a6" style="background-color: #14b8a6;"></span>
+                                    <span class="color-dot picker-dot" data-color="#6b7280" style="background-color: #6b7280;"></span>
+                                    <span class="color-dot picker-dot" data-color="#374151" style="background-color: #374151;"></span>
+                                </div>
+                                <input type="hidden" id="add-user-color-input" value="#10b981">
+                            </div>
+
+                            <div class="form-group" style="margin-top: 16px;">
+                                <label class="form-label">Statut</label>
+                                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background-color: #d1fae5; color: #065f46; border-radius: 8px; font-size: 13.5px; font-weight: 600;">
+                                    <span>Activé</span>
+                                    <span style="width: 32px; height: 18px; background-color: #10b981; border-radius: 9px; display: inline-flex; align-items: center; justify-content: flex-end; padding: 2px; cursor: pointer;">
+                                        <span style="width: 14px; height: 14px; background-color: white; border-radius: 50%;"></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Side: Text inputs -->
+                        <div class="chantier-form-right">
+                            <div style="display: flex; gap: 16px;">
+                                <div class="form-group" style="flex: 1;">
+                                    <label for="user-firstname" class="form-label">Prénom *</label>
+                                    <input type="text" id="user-firstname" class="form-input" required placeholder="Ex: Jean">
+                                </div>
+                                <div class="form-group" style="flex: 1;">
+                                    <label for="user-lastname" class="form-label">Nom *</label>
+                                    <input type="text" id="user-lastname" class="form-input" required placeholder="Ex: Dupont">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="add-user-code" class="form-label">Code utilisateur</label>
+                                <input type="text" id="add-user-code" class="form-input" placeholder="Code utilisateur">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="user-phone" class="form-label">Téléphone <span style="font-size: 11px; color: var(--gray-muted); cursor: pointer;" title="Aide">?</span></label>
+                                <div style="display: flex; align-items: center; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; background: white;">
+                                    <div style="padding: 8px 12px; display: flex; align-items: center; gap: 6px; border-right: 1px solid var(--border-color); font-size: 13.5px; font-weight: 500; cursor: pointer; background-color: #f8fafc;">
+                                        <span>🇫🇷</span>
+                                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="6 9 12 15 18 9"/>
+                                        </svg>
+                                    </div>
+                                    <input type="tel" id="user-phone" class="form-input" style="border: none !important; margin: 0; flex: 1;" required placeholder="Ex: 06 12 34 56 78">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="add-user-type" class="form-label">Type * <span style="font-size: 11px; color: var(--gray-muted); cursor: pointer;" title="Aide">?</span></label>
+                                <select id="add-user-type" class="form-select" required style="width: 100%; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13.5px; background-color: white;">
+                                    <option value="Employé" selected>Employé</option>
+                                    <option value="Sous-traitant">Sous-traitant</option>
+                                    <option value="Intérimaire">Intérimaire</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="user-role" class="form-label">Rôle * <span style="font-size: 11px; color: var(--gray-muted); cursor: pointer;" title="Aide">?</span></label>
+                                <select id="user-role" class="form-select" required style="width: 100%; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13.5px; background-color: white;">
+                                    <option value="Compagnon" selected>Compagnon</option>
+                                    <option value="Chef de chantier">Chef de chantier</option>
+                                    <option value="Conducteur de travaux">Conducteur de travaux</option>
+                                    <option value="Propriétaire">Propriétaire</option>
+                                    <option value="Administrateur">Administrateur</option>
+                                </select>
+                            </div>
+
+                            <p style="font-size: 10.5px; color: var(--gray-muted); margin-top: 8px; line-height: 1.4;">
+                                Ce site est protégé par reCAPTCHA et la <a href="#" style="color: var(--primary); text-decoration: underline;">politique de confidentialité</a> Google et les <a href="#" style="color: var(--primary); text-decoration: underline;">conditions d'utilisation</a> s'appliquent.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--border-color); padding: 16px 24px;">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-user-modal" style="padding: 10px 16px; border-radius: 6px; cursor: pointer;">Annuler</button>
+                    <button type="submit" class="btn btn-primary" style="background-color: var(--primary); padding: 10px 16px; border-radius: 6px; cursor: pointer; color: white; border: none; font-weight: 600;">Enregistrer l'utilisateur</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EDIT USER -->
+    <div class="modal-backdrop" id="edit-user-modal">
+        <div class="modal modal-large">
+            <div class="modal-header">
+                <h3 class="modal-title" style="font-family: var(--font-heading); font-size: 18px; font-weight: 700; color: var(--primary);">Modifier un utilisateur</h3>
+                <button class="modal-close" id="btn-close-edit-user-modal">&times;</button>
+            </div>
+            <form id="edit-user-form">
+                <input type="hidden" id="edit-user-id">
+                <div class="modal-body-scroll">
+                    <div class="chantier-form-grid">
+                        
+                        <!-- Left Side: Image upload, Color, Status -->
+                        <div class="chantier-form-left">
+                            <div class="image-uploader">
+                                <div class="uploader-icon">
+                                    <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="17 8 12 3 7 8"/>
+                                        <line x1="12" y1="3" x2="12" y2="15"/>
+                                    </svg>
+                                </div>
+                                <p class="uploader-text">Glissez et déposez votre image ici</p>
+                                <span class="uploader-or">ou</span>
+                                <button type="button" class="btn-uploader-file" style="background-color: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 11px; cursor: pointer;">Recherchez sur votre ordinateur</button>
+                            </div>
+                            
+                            <div class="form-group" style="margin-top: 20px;">
+                                <label class="form-label">Couleur de l'utilisateur</label>
+                                <div class="color-palette-picker" id="edit-user-color-picker">
+                                    <span class="color-dot picker-dot selected" data-color="#10b981" style="background-color: #10b981;"></span>
+                                    <span class="color-dot picker-dot" data-color="#34d399" style="background-color: #34d399;"></span>
+                                    <span class="color-dot picker-dot" data-color="#22c55e" style="background-color: #22c55e;"></span>
+                                    <span class="color-dot picker-dot" data-color="#84cc16" style="background-color: #84cc16;"></span>
+                                    <span class="color-dot picker-dot" data-color="#eab308" style="background-color: #eab308;"></span>
+                                    <span class="color-dot picker-dot" data-color="#f97316" style="background-color: #f97316;"></span>
+                                    <span class="color-dot picker-dot" data-color="#ef4444" style="background-color: #ef4444;"></span>
+                                    <span class="color-dot picker-dot" data-color="#a855f7" style="background-color: #a855f7;"></span>
+                                    <span class="color-dot picker-dot" data-color="#c084fc" style="background-color: #c084fc;"></span>
+                                    <span class="color-dot picker-dot" data-color="#4f46e5" style="background-color: #4f46e5;"></span>
+                                    <span class="color-dot picker-dot" data-color="#3b82f6" style="background-color: #3b82f6;"></span>
+                                    <span class="color-dot picker-dot" data-color="#22d3ee" style="background-color: #22d3ee;"></span>
+                                    <span class="color-dot picker-dot" data-color="#14b8a6" style="background-color: #14b8a6;"></span>
+                                    <span class="color-dot picker-dot" data-color="#6b7280" style="background-color: #6b7280;"></span>
+                                    <span class="color-dot picker-dot" data-color="#374151" style="background-color: #374151;"></span>
+                                </div>
+                                <input type="hidden" id="edit-user-color-input" value="#10b981">
+                            </div>
+
+                            <div class="form-group" style="margin-top: 16px;">
+                                <label class="form-label">Statut</label>
+                                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background-color: #d1fae5; color: #065f46; border-radius: 8px; font-size: 13.5px; font-weight: 600;">
+                                    <span>Activé</span>
+                                    <!-- Simple switch simulation -->
+                                    <span style="width: 32px; height: 18px; background-color: #10b981; border-radius: 9px; display: inline-flex; align-items: center; justify-content: flex-end; padding: 2px; cursor: pointer;">
+                                        <span style="width: 14px; height: 14px; background-color: white; border-radius: 50%;"></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Side: Text inputs -->
+                        <div class="chantier-form-right">
+                            <div style="display: flex; gap: 16px;">
+                                <div class="form-group" style="flex: 1;">
+                                    <label for="edit-user-firstname" class="form-label">Prénom *</label>
+                                    <input type="text" id="edit-user-firstname" class="form-input" required placeholder="Exemple">
+                                </div>
+                                <div class="form-group" style="flex: 1;">
+                                    <label for="edit-user-lastname" class="form-label">Nom *</label>
+                                    <input type="text" id="edit-user-lastname" class="form-input" required placeholder="Compagnon 1">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="edit-user-code" class="form-label">Code utilisateur</label>
+                                <input type="text" id="edit-user-code" class="form-input" placeholder="Code utilisateur">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="edit-user-phone" class="form-label">Téléphone <span style="font-size: 11px; color: var(--gray-muted); cursor: pointer;" title="Aide">?</span></label>
+                                <div style="display: flex; align-items: center; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; background: white;">
+                                    <div style="padding: 8px 12px; display: flex; align-items: center; gap: 6px; border-right: 1px solid var(--border-color); font-size: 13.5px; font-weight: 500; cursor: pointer; background-color: #f8fafc;">
+                                        <span>🇫🇷</span>
+                                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="6 9 12 15 18 9"/>
+                                        </svg>
+                                    </div>
+                                    <input type="tel" id="edit-user-phone" class="form-input" style="border: none !important; margin: 0; flex: 1;" required placeholder="+336xxxxxxxx">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="edit-user-type" class="form-label">Type * <span style="font-size: 11px; color: var(--gray-muted); cursor: pointer;" title="Aide">?</span></label>
+                                <select id="edit-user-type" class="form-select" required style="width: 100%; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13.5px; background-color: white;">
+                                    <option value="Employé" selected>Employé</option>
+                                    <option value="Sous-traitant">Sous-traitant</option>
+                                    <option value="Intérimaire">Intérimaire</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="edit-user-role-select" class="form-label">Rôle * <span style="font-size: 11px; color: var(--gray-muted); cursor: pointer;" title="Aide">?</span></label>
+                                <select id="edit-user-role-select" class="form-select" required style="width: 100%; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13.5px; background-color: white;">
+                                    <option value="Compagnon" selected>Compagnon</option>
+                                    <option value="Chef de chantier">Chef de chantier</option>
+                                    <option value="Conducteur de travaux">Conducteur de travaux</option>
+                                    <option value="Administrateur">Administrateur</option>
+                                </select>
+                            </div>
+
+                            <p style="font-size: 10.5px; color: var(--gray-muted); margin-top: 8px; line-height: 1.4;">
+                                Ce site est protégé par reCAPTCHA et la <a href="#" style="color: var(--primary); text-decoration: underline;">politique de confidentialité</a> Google et les <a href="#" style="color: var(--primary); text-decoration: underline;">conditions d'utilisation</a> s'appliquent.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--border-color); padding: 16px 24px;">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-edit-user-modal" style="padding: 10px 16px; border-radius: 6px; cursor: pointer;">Annuler</button>
+                    <button type="submit" class="btn btn-primary" style="background-color: var(--primary); padding: 10px 16px; border-radius: 6px; cursor: pointer; color: white; border: none; font-weight: 600;">Confirmer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD CHANTIER -->
+    <div class="modal-backdrop" id="chantier-modal">
+        <div class="modal modal-large">
+            <div class="modal-header">
+                <h3 class="modal-title">Ajouter un chantier</h3>
+                <button class="modal-close" id="btn-close-chantier-modal">&times;</button>
+            </div>
+            <form id="add-chantier-form">
+                <div class="modal-body-scroll">
+                    <div class="chantier-form-grid">
+                        
+                        <!-- Left Side: Image upload, Color, Status -->
+                        <div class="chantier-form-left">
+                            <div class="image-uploader">
+                                <div class="uploader-icon">
+                                    <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="17 8 12 3 7 8"/>
+                                        <line x1="12" y1="3" x2="12" y2="15"/>
+                                    </svg>
+                                </div>
+                                <p class="uploader-text">Glissez et déposez votre image ici</p>
+                                <span class="uploader-or">ou</span>
+                                <button type="button" class="btn-uploader-file">Recherchez sur votre ordinateur</button>
+                            </div>
+                            
+                            <div class="form-group" style="margin-top: 20px;">
+                                <label class="form-label">Couleur du chantier</label>
+                                <div class="color-palette-picker">
+                                    <span class="color-dot picker-dot selected" data-color="#10b981" style="background-color: #10b981;"></span>
+                                    <span class="color-dot picker-dot" data-color="#34d399" style="background-color: #34d399;"></span>
+                                    <span class="color-dot picker-dot" data-color="#22c55e" style="background-color: #22c55e;"></span>
+                                    <span class="color-dot picker-dot" data-color="#84cc16" style="background-color: #84cc16;"></span>
+                                    <span class="color-dot picker-dot" data-color="#eab308" style="background-color: #eab308;"></span>
+                                    <span class="color-dot picker-dot" data-color="#f97316" style="background-color: #f97316;"></span>
+                                    <span class="color-dot picker-dot" data-color="#ef4444" style="background-color: #ef4444;"></span>
+                                    <span class="color-dot picker-dot" data-color="#a855f7" style="background-color: #a855f7;"></span>
+                                    <span class="color-dot picker-dot" data-color="#c084fc" style="background-color: #c084fc;"></span>
+                                    <span class="color-dot picker-dot" data-color="#4f46e5" style="background-color: #4f46e5;"></span>
+                                    <span class="color-dot picker-dot" data-color="#3b82f6" style="background-color: #3b82f6;"></span>
+                                    <span class="color-dot picker-dot" data-color="#22d3ee" style="background-color: #22d3ee;"></span>
+                                    <span class="color-dot picker-dot" data-color="#14b8a6" style="background-color: #14b8a6;"></span>
+                                    <span class="color-dot picker-dot" data-color="#6b7280" style="background-color: #6b7280;"></span>
+                                    <span class="color-dot picker-dot" data-color="#374151" style="background-color: #374151;"></span>
+                                </div>
+                                <input type="hidden" id="chantier-color-input" value="#10b981">
+                            </div>
+
+                            <div class="form-group" style="margin-top: 16px;">
+                                <label for="chantier-status" class="form-label">Statut *</label>
+                                <select id="chantier-status" class="form-select" required>
+                                    <option value="Ouvert" selected>Ouvert</option>
+                                    <option value="Fermé">Fermé</option>
+                                    <option value="En attente">En attente</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Right Side: Details forms -->
+                        <div class="chantier-form-right">
+                            <div class="form-row">
+                                <div class="form-group flex-2">
+                                    <label for="chantier-name" class="form-label">Nom du chantier *</label>
+                                    <input type="text" id="chantier-name" class="form-input" required placeholder="Nom du chantier">
+                                </div>
+                                <div class="form-group flex-1">
+                                    <label for="chantier-code" class="form-label">Code chantier</label>
+                                    <input type="text" id="chantier-code" class="form-input" placeholder="Code chantier">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="chantier-desc" class="form-label">Description</label>
+                                <textarea id="chantier-desc" class="form-textarea" rows="3" placeholder="Description du chantier"></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="chantier-client" class="form-label">Client</label>
+                                <input type="text" id="chantier-client" class="form-input" placeholder="Client">
+                            </div>
+
+                            <div class="form-row form-row-5">
+                                <div class="form-group">
+                                    <label for="chantier-date-start" class="form-label">Date de début</label>
+                                    <input type="date" id="chantier-date-start" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="chantier-date-end" class="form-label">Date de fin</label>
+                                    <input type="date" id="chantier-date-end" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="chantier-time-start" class="form-label">Heure début</label>
+                                    <input type="time" id="chantier-time-start" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="chantier-time-end" class="form-label">Heure fin</label>
+                                    <input type="time" id="chantier-time-end" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="chantier-budget" class="form-label">Heures estimées</label>
+                                    <input type="number" id="chantier-budget" class="form-input" value="150" min="0">
+                                </div>
+                            </div>
+
+                            <div class="form-row form-row-3">
+                                <div class="form-group flex-3">
+                                    <label for="chantier-address" class="form-label">Adresse</label>
+                                    <input type="text" id="chantier-address" class="form-input" placeholder="Adresse">
+                                </div>
+                                <div class="form-group flex-1">
+                                    <label for="chantier-zip" class="form-label">Code postal</label>
+                                    <input type="text" id="chantier-zip" class="form-input" placeholder="Code postal">
+                                </div>
+                                <div class="form-group flex-2">
+                                    <label for="chantier-city" class="form-label">Ville</label>
+                                    <input type="text" id="chantier-city" class="form-input" placeholder="Ville">
+                                </div>
+                            </div>
+
+                            <div class="form-row form-row-3">
+                                <div class="form-group">
+                                    <label for="chantier-lat" class="form-label">Latitude</label>
+                                    <input type="text" id="chantier-lat" class="form-input" placeholder="Exemple: 48.85833">
+                                </div>
+                                <div class="form-group">
+                                    <label for="chantier-lng" class="form-label">Longitude</label>
+                                    <input type="text" id="chantier-lng" class="form-input" placeholder="Exemple: 2.29444">
+                                </div>
+                                <div class="form-group">
+                                    <label for="chantier-addr-comp" class="form-label">Complément d'adresse</label>
+                                    <input type="text" id="chantier-addr-comp" class="form-input" placeholder="Complément d'adresse">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="chantier-managers" class="form-label">Conducteurs de travaux</label>
+                                <div class="select-tags-container">
+                                    <div class="tag-badge">Jules Marcon <span class="tag-remove">&times;</span></div>
+                                    <select id="chantier-managers" class="form-select select-inline-border">
+                                        <option value="u1" selected>Jules Marcon</option>
+                                        <option value="u2">Marc Lambert</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="chantier-chefs" class="form-label">Chefs de chantier</label>
+                                <select id="chantier-chefs" class="form-select">
+                                    <option value="" disabled selected>Sélectionnez un ou plusieurs chefs de chantier</option>
+                                    <option value="u3">Luc Petit</option>
+                                    <option value="u4">Pierre Dubois</option>
+                                </select>
+                            </div>
+
+                            <div class="form-row form-row-3">
+                                <div class="form-group">
+                                    <label for="chantier-contact" class="form-label">Contact chantier</label>
+                                    <input type="text" id="chantier-contact" class="form-input" placeholder="Contact chantier">
+                                </div>
+                                <div class="form-group">
+                                    <label for="chantier-contact-phone" class="form-label">Téléphone du contact</label>
+                                    <input type="tel" id="chantier-contact-phone" class="form-input" placeholder="+336XXXXXXXX">
+                                </div>
+                                <div class="form-group">
+                                    <label for="chantier-contact-email" class="form-label">Email du contact</label>
+                                    <input type="email" id="chantier-contact-email" class="form-input" placeholder="Email du contact">
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-chantier-modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary" style="background-color: #1e3a8a;">Créer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EDIT CHANTIER -->
+    <div class="modal-backdrop" id="edit-chantier-modal">
+        <div class="modal modal-large">
+            <div class="modal-header">
+                <h3 class="modal-title" style="font-family: var(--font-heading); font-size: 18px; font-weight: 700; color: var(--primary);">Modifier un chantier</h3>
+                <button class="modal-close" id="btn-close-edit-chantier-modal">&times;</button>
+            </div>
+            <form id="edit-chantier-form">
+                <input type="hidden" id="edit-chantier-id">
+                <div class="modal-body-scroll" style="text-align: left;">
+                    <div class="chantier-form-grid">
+                        
+                        <!-- Left Side: Image upload, Color, Status -->
+                        <div class="chantier-form-left">
+                            <div class="image-uploader">
+                                <div class="uploader-icon">
+                                    <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="17 8 12 3 7 8"/>
+                                        <line x1="12" y1="3" x2="12" y2="15"/>
+                                    </svg>
+                                </div>
+                                <p class="uploader-text">Glissez et déposez votre image ici</p>
+                                <span class="uploader-or">ou</span>
+                                <button type="button" class="btn-uploader-file" style="background-color: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 11px; cursor: pointer;">Recherchez sur votre ordinateur</button>
+                            </div>
+                            
+                            <div class="form-group" style="margin-top: 20px;">
+                                <label class="form-label">Couleur du chantier</label>
+                                <div class="color-palette-picker" id="edit-chantier-color-picker">
+                                    <span class="color-dot picker-dot selected" data-color="#10b981" style="background-color: #10b981;"></span>
+                                    <span class="color-dot picker-dot" data-color="#34d399" style="background-color: #34d399;"></span>
+                                    <span class="color-dot picker-dot" data-color="#22c55e" style="background-color: #22c55e;"></span>
+                                    <span class="color-dot picker-dot" data-color="#84cc16" style="background-color: #84cc16;"></span>
+                                    <span class="color-dot picker-dot" data-color="#eab308" style="background-color: #eab308;"></span>
+                                    <span class="color-dot picker-dot" data-color="#f97316" style="background-color: #f97316;"></span>
+                                    <span class="color-dot picker-dot" data-color="#ef4444" style="background-color: #ef4444;"></span>
+                                    <span class="color-dot picker-dot" data-color="#a855f7" style="background-color: #a855f7;"></span>
+                                    <span class="color-dot picker-dot" data-color="#c084fc" style="background-color: #c084fc;"></span>
+                                    <span class="color-dot picker-dot" data-color="#4f46e5" style="background-color: #4f46e5;"></span>
+                                    <span class="color-dot picker-dot" data-color="#3b82f6" style="background-color: #3b82f6;"></span>
+                                    <span class="color-dot picker-dot" data-color="#22d3ee" style="background-color: #22d3ee;"></span>
+                                    <span class="color-dot picker-dot" data-color="#14b8a6" style="background-color: #14b8a6;"></span>
+                                    <span class="color-dot picker-dot" data-color="#6b7280" style="background-color: #6b7280;"></span>
+                                    <span class="color-dot picker-dot" data-color="#374151" style="background-color: #374151;"></span>
+                                </div>
+                                <input type="hidden" id="edit-chantier-color-input" value="#10b981">
+                            </div>
+
+                            <div class="form-group" style="margin-top: 16px;">
+                                <label for="edit-chantier-status" class="form-label">Statut *</label>
+                                <select id="edit-chantier-status" class="form-select" required>
+                                    <option value="Ouvert">Ouvert</option>
+                                    <option value="Fermé">Fermé</option>
+                                    <option value="En attente">En attente</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Right Side: Details forms -->
+                        <div class="chantier-form-right">
+                            <div class="form-row">
+                                <div class="form-group flex-2">
+                                    <label for="edit-chantier-name" class="form-label">Nom du chantier *</label>
+                                    <input type="text" id="edit-chantier-name" class="form-input" required placeholder="Nom du chantier">
+                                </div>
+                                <div class="form-group flex-1">
+                                    <label for="edit-chantier-code" class="form-label">Code chantier</label>
+                                    <input type="text" id="edit-chantier-code" class="form-input" placeholder="Code chantier">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="edit-chantier-desc" class="form-label">Description</label>
+                                <textarea id="edit-chantier-desc" class="form-textarea" rows="3" placeholder="Description du chantier"></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="edit-chantier-client" class="form-label">Client</label>
+                                <input type="text" id="edit-chantier-client" class="form-input" placeholder="Client">
+                            </div>
+
+                            <div class="form-row form-row-5">
+                                <div class="form-group">
+                                    <label for="edit-chantier-date-start" class="form-label">Date de début</label>
+                                    <input type="date" id="edit-chantier-date-start" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-chantier-date-end" class="form-label">Date de fin</label>
+                                    <input type="date" id="edit-chantier-date-end" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-chantier-time-start" class="form-label">Heure début</label>
+                                    <input type="time" id="edit-chantier-time-start" class="form-input" value="09:00">
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-chantier-time-end" class="form-label">Heure fin</label>
+                                    <input type="time" id="edit-chantier-time-end" class="form-input" value="17:00">
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-chantier-budget" class="form-label">Heures estimées</label>
+                                    <input type="number" id="edit-chantier-budget" class="form-input" value="150" min="0">
+                                </div>
+                            </div>
+
+                            <div class="form-row form-row-3">
+                                <div class="form-group flex-3">
+                                    <label for="edit-chantier-address" class="form-label">Adresse</label>
+                                    <input type="text" id="edit-chantier-address" class="form-input" placeholder="Adresse">
+                                </div>
+                                <div class="form-group flex-1">
+                                    <label for="edit-chantier-zip" class="form-label">Code postal</label>
+                                    <input type="text" id="edit-chantier-zip" class="form-input" placeholder="Code postal">
+                                </div>
+                                <div class="form-group flex-2">
+                                    <label for="edit-chantier-city" class="form-label">Ville</label>
+                                    <input type="text" id="edit-chantier-city" class="form-input" placeholder="Ville">
+                                </div>
+                            </div>
+
+                            <div class="form-row form-row-3">
+                                <div class="form-group">
+                                    <label for="edit-chantier-lat" class="form-label">Latitude</label>
+                                    <input type="text" id="edit-chantier-lat" class="form-input" placeholder="Exemple: 48.85833">
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-chantier-lng" class="form-label">Longitude</label>
+                                    <input type="text" id="edit-chantier-lng" class="form-input" placeholder="Exemple: 2.29444">
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-chantier-addr-comp" class="form-label">Complément d'adresse</label>
+                                    <input type="text" id="edit-chantier-addr-comp" class="form-input" placeholder="Complément d'adresse">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="edit-chantier-managers" class="form-label">Conducteurs de travaux</label>
+                                <select id="edit-chantier-managers" class="form-select">
+                                    <option value="u1">Jules Marcon</option>
+                                    <option value="u2">Marc Lambert</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="edit-chantier-chefs" class="form-label">Chefs de chantier</label>
+                                <select id="edit-chantier-chefs" class="form-select">
+                                    <option value="u3">Luc Petit</option>
+                                    <option value="u4">Pierre Dubois</option>
+                                </select>
+                            </div>
+
+                            <div class="form-row form-row-3">
+                                <div class="form-group">
+                                    <label for="edit-chantier-contact" class="form-label">Contact chantier</label>
+                                    <input type="text" id="edit-chantier-contact" class="form-input" placeholder="Contact chantier">
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-chantier-contact-phone" class="form-label">Téléphone du contact</label>
+                                    <input type="tel" id="edit-chantier-contact-phone" class="form-input" placeholder="0123456789">
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-chantier-contact-email" class="form-label">Email du contact</label>
+                                    <input type="email" id="edit-chantier-contact-email" class="form-input" placeholder="Email du contact">
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 12px;">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-edit-chantier-modal" style="padding: 10px 16px; border-radius: 6px; cursor: pointer;">Annuler</button>
+                    <button type="submit" class="btn btn-primary" style="background-color: var(--primary); padding: 10px 16px; border-radius: 6px; cursor: pointer; color: white; border: none; font-weight: 600;">Confirmer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ASSIGN COMPANION TO PLANNING -->
+    <div class="modal-backdrop" id="assign-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Affecter un compagnon</h3>
+                <button class="modal-close" id="btn-close-assign-modal">&times;</button>
+            </div>
+            <form id="assign-form">
+                <input type="hidden" id="assign-chantier-id">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="assign-user" class="form-label">Sélectionner un compagnon / chef</label>
+                        <select id="assign-user" class="form-select" required>
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                    
+                    <div class="planning-days-select">
+                        <span class="form-label">Jours d'affectation</span>
+                        <div class="days-checkbox-grid">
+                            <label class="day-checkbox-label">
+                                <input type="checkbox" name="assign-days" value="0" checked> lun.
+                            </label>
+                            <label class="day-checkbox-label">
+                                <input type="checkbox" name="assign-days" value="1" checked> mar.
+                            </label>
+                            <label class="day-checkbox-label">
+                                <input type="checkbox" name="assign-days" value="2" checked> mer.
+                            </label>
+                            <label class="day-checkbox-label">
+                                <input type="checkbox" name="assign-days" value="3" checked> jeu.
+                            </label>
+                            <label class="day-checkbox-label">
+                                <input type="checkbox" name="assign-days" value="4" checked> ven.
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="assign-start-time" class="form-label">Heure début</label>
+                            <input type="time" id="assign-start-time" class="form-input" value="08:00" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="assign-end-time" class="form-label">Heure fin</label>
+                            <input type="time" id="assign-end-time" class="form-input" value="17:00" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-assign-modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Affecter au planning</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EDIT ASSIGNMENT -->
+    <div id="edit-assign-modal" class="modal-backdrop">
+        <div class="modal" style="width: 800px; max-width: 95vw; padding: 0; display: flex; flex-direction: row; border-radius: 12px; overflow: hidden; height: 580px; text-align: left;">
+            <!-- Modal Sidebar -->
+            <div style="width: 200px; background-color: #f8fafc; padding: 24px 16px; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px;">
+                <div class="edit-modal-tab active" data-tab="tab-edit-alloc" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 6px; font-weight: 600; font-size: 13.5px; cursor: pointer; color: var(--primary); background-color: #ede9fe;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    Affectation
+                </div>
+                <div class="edit-modal-tab" data-tab="tab-edit-pub" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 6px; font-size: 13.5px; color: var(--gray-muted); cursor: pointer;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    Publications
+                </div>
+                <div class="edit-modal-tab" data-tab="tab-edit-exp" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 6px; font-size: 13.5px; color: var(--gray-muted); cursor: pointer;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Exporter
+                </div>
+            </div>
+
+            <!-- Modal Main Content Area -->
+            <div style="flex: 1; display: flex; flex-direction: column; background: white; position: relative;">
+                <!-- Modal Header -->
+                <div style="padding: 24px 32px 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <h2 style="font-family: var(--font-heading); font-size: 20px; font-weight: 700; color: var(--primary); margin: 0;">Affectation</h2>
+                    <button class="modal-close" id="btn-close-edit-assign-modal" style="font-size: 24px; cursor: pointer; color: var(--gray-muted); background: none; border: none;">&times;</button>
+                </div>
+
+                <!-- Subtitle / Worker Banner -->
+                <div style="margin: 0 32px 16px; padding: 12px 16px; background-color: #fff7ed; border-radius: 8px; font-size: 13px; font-weight: 500; color: #c2410c;">
+                    <span id="edit-assign-subtitle-worker" style="font-weight: 700;">Compagnon</span> sur le chantier <span id="edit-assign-subtitle-chantier" style="font-weight: 700;">Chantier</span>
+                </div>
+
+                <!-- Tabs Containers -->
+                <div style="flex: 1; overflow-y: auto; padding: 0 32px 24px;">
+                    <!-- Tab 1: Edit Allocation -->
+                    <div id="tab-edit-alloc" class="edit-tab-content">
+                        <form id="edit-assign-form" style="display: flex; flex-direction: column; gap: 16px;">
+                            <input type="hidden" id="edit-assign-chantier-id">
+                            <input type="hidden" id="edit-assign-user-id">
+
+                            <div style="display: flex; gap: 16px;">
+                                <div style="flex: 1;">
+                                    <label class="form-label" style="font-size: 11px; color: #475569; margin-bottom: 6px; display: block; font-weight: 600;">Date</label>
+                                    <input type="text" id="edit-assign-date" class="form-input" readonly style="background-color: #f8fafc; cursor: not-allowed; font-size: 13px; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; width: 100%;">
+                                </div>
+                                <div style="flex: 1;">
+                                    <label class="form-label" style="font-size: 11px; color: #475569; margin-bottom: 6px; display: block; font-weight: 600;">Heure de début</label>
+                                    <input type="time" id="edit-assign-start-time" class="form-input" style="font-size: 13px; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; width: 100%;">
+                                </div>
+                                <div style="flex: 1;">
+                                    <label class="form-label" style="font-size: 11px; color: #475569; margin-bottom: 6px; display: block; font-weight: 600;">Heure de fin</label>
+                                    <input type="time" id="edit-assign-end-time" class="form-input" style="font-size: 13px; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; width: 100%;">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="form-label" style="font-size: 11px; color: #475569; margin-bottom: 6px; display: block; font-weight: 600;">Note</label>
+                                <textarea id="edit-assign-note" class="form-input" rows="3" placeholder="Livraison du matériel à 8h..." style="font-size: 13px; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; width: 100%; font-family: inherit; resize: none;"></textarea>
+                            </div>
+
+                            <div>
+                                <label class="form-label" style="font-size: 11px; color: #475569; margin-bottom: 6px; display: block; font-weight: 600;">Sélectionnez une ou plusieurs tâches *</label>
+                                <select id="edit-assign-task" class="form-input" style="font-size: 13px; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; width: 100%;">
+                                    <option value="">...</option>
+                                    <option value="maconnerie">Maçonnerie</option>
+                                    <option value="electricite">Électricité</option>
+                                    <option value="plomberie">Plomberie</option>
+                                    <option value="finitions">Finitions</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="form-label" style="font-size: 11px; color: #475569; margin-bottom: 6px; display: block; font-weight: 600;">Couleur de l'évènement</label>
+                                <div style="display: flex; gap: 8px; align-items: center;" id="edit-assign-color-picker">
+                                    <input type="hidden" id="edit-assign-color" value="#6050f3">
+                                    <span class="color-dot picker-dot selected" data-color="#10b981" style="background-color: #10b981;"></span>
+                                    <span class="color-dot picker-dot" data-color="#34d399" style="background-color: #34d399;"></span>
+                                    <span class="color-dot picker-dot" data-color="#22c55e" style="background-color: #22c55e;"></span>
+                                    <span class="color-dot picker-dot" data-color="#84cc16" style="background-color: #84cc16;"></span>
+                                    <span class="color-dot picker-dot" data-color="#eab308" style="background-color: #eab308;"></span>
+                                    <span class="color-dot picker-dot" data-color="#f59e0b" style="background-color: #f59e0b;"></span>
+                                    <span class="color-dot picker-dot" data-color="#f97316" style="background-color: #f97316;"></span>
+                                    <span class="color-dot picker-dot" data-color="#ef4444" style="background-color: #ef4444;"></span>
+                                    <span class="color-dot picker-dot" data-color="#a855f7" style="background-color: #a855f7;"></span>
+                                    <span class="color-dot picker-dot" data-color="#6050f3" style="background-color: #6050f3;"></span>
+                                    <span class="color-dot picker-dot" data-color="#3b82f6" style="background-color: #3b82f6;"></span>
+                                    <span class="color-dot picker-dot" data-color="#06b6d4" style="background-color: #06b6d4;"></span>
+                                    <span class="color-dot picker-dot" data-color="#14b8a6" style="background-color: #14b8a6;"></span>
+                                    <span class="color-dot picker-dot" data-color="#64748b" style="background-color: #64748b;"></span>
+                                    <span class="color-dot picker-dot" data-color="#0f172a" style="background-color: #0f172a;"></span>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Tab 2: Publications -->
+                    <div id="tab-edit-pub" class="edit-tab-content" style="display: none;">
+                        <div class="empty-state" style="padding: 24px; text-align: center; color: var(--gray-muted); font-style: italic;">
+                            Aucune publication liée à cette affectation
+                        </div>
+                    </div>
+
+                    <!-- Tab 3: Exporter -->
+                    <div id="tab-edit-exp" class="edit-tab-content" style="display: none;">
+                        <div style="display: flex; flex-direction: column; gap: 12px; padding-top: 10px; text-align: left;">
+                            <button class="btn btn-secondary" onclick="alert('Exportation PDF en cours...')">Exporter en PDF</button>
+                            <button class="btn btn-secondary" onclick="alert('Exportation Excel en cours...')">Exporter en Excel (XLSX)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Action Buttons -->
+                <div style="padding: 16px 32px 24px; display: flex; justify-content: space-between; border-top: 1px solid var(--border-color); background-color: #f8fafc; align-items: center;">
+                    <button class="btn" id="btn-delete-edit-assign" style="background-color: #ef4444; color: white; display: flex; align-items: center; gap: 8px; padding: 10px 16px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                        Supprimer l'affectation
+                    </button>
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn btn-secondary" id="btn-cancel-edit-assign-modal" style="padding: 10px 16px; border-radius: 6px; cursor: pointer;">Annuler</button>
+                        <button class="btn btn-primary" id="btn-save-edit-assign" style="background-color: var(--accent); padding: 10px 16px; border-radius: 6px; cursor: pointer; color: white; border: none; font-weight: 600;">Enregistrer</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hours Slider Drawer -->
+    <div id="hours-slider-drawer" class="slider-drawer">
+        <div class="drawer-header">
+            <h4 class="drawer-title" style="margin: 0; font-family: var(--font-heading); font-size: 15px; color: var(--primary);">Ajustement des heures</h4>
+            <button class="modal-close" id="btn-close-drawer" style="font-size: 20px; cursor: pointer; color: var(--gray-muted); background: none; border: none;">&times;</button>
+        </div>
+        <div class="drawer-body" style="padding: 20px; display: flex; flex-direction: column; gap: 20px; text-align: left;">
+            <div style="font-size: 13px; font-weight: 600; color: #c2410c; background-color: #fff7ed; padding: 12px 14px; border-radius: 8px;">
+                <div id="drawer-user-name" style="font-weight: 700;">Ouvrier</div>
+                <div id="drawer-chantier-name" style="font-weight: normal; font-size: 12px; color: #475569; margin-top: 2px;">Chantier</div>
+            </div>
+            
+            <div style="font-size: 12px; color: var(--gray-muted); font-weight: 600; text-transform: uppercase;" id="drawer-day-label">Jour : Lundi</div>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <label style="font-size: 12px; font-weight: 600; color: #475569; display: flex; justify-content: space-between; align-items: center;">
+                    <span>Heures travaillées</span>
+                    <span id="drawer-slider-value" style="color: var(--accent); font-weight: 700; font-size: 15px;">08:00</span>
+                </label>
+                <!-- Range Slider Control -->
+                <div style="display: flex; align-items: center; gap: 12px; padding: 10px 0;">
+                    <input type="range" id="drawer-range-input" min="0" max="12" step="0.5" value="8" style="flex: 1; accent-color: var(--accent); height: 6px; border-radius: 4px; cursor: pointer;">
+                    <span style="font-size: 12px; font-weight: 700; color: #475569; width: 45px; text-align: right;" id="drawer-hours-decimal">8.0 h</span>
+                </div>
+            </div>
+
+            <!-- Manual input field next to it -->
+            <div style="display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+                <label for="drawer-manual-input" style="font-size: 11px; font-weight: 600; color: #475569;">Saisie manuelle rapide</label>
+                <input type="text" id="drawer-manual-input" style="font-size: 14px; padding: 8px; text-align: center; font-weight: 700; border-radius: 6px; border: 1px solid var(--border-color); background-color: #f8fafc; color: var(--text-primary); width: 100%;">
+            </div>
+        </div>
+    </div>
+
+
+    <!-- MODAL: EXPORT FEUILLES D'HEURES -->
+    <div class="modal-backdrop" id="export-hours-modal">
+        <div class="modal" style="max-width: 520px; width: 100%;">
+            <div class="modal-header" style="background: linear-gradient(135deg, var(--primary), #4338ca); color: white; border-radius: 12px 12px 0 0;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 36px; height: 36px; background: rgba(255,255,255,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="modal-title" style="color: white; font-size: 16px; margin: 0;">Exporter les feuilles d'heures</h3>
+                        <p style="font-size: 12px; color: rgba(255,255,255,0.75); margin: 0; margin-top: 2px;">Choisissez votre plage de dates et votre format</p>
+                    </div>
+                </div>
+                <button class="modal-close" id="btn-close-export-modal" style="color: white; opacity: 0.8;">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 24px;">
+
+                <!-- Date range -->
+                <div style="background: var(--bg-primary); border-radius: 10px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border-color);">
+                    <label style="font-size: 12px; font-weight: 700; color: var(--gray-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 12px;">📅 Plage de dates</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div>
+                            <label for="export-date-from" class="form-label" style="font-size: 12px;">Du</label>
+                            <input type="date" id="export-date-from" class="form-input" style="font-size: 13px; padding: 8px 12px;">
+                        </div>
+                        <div>
+                            <label for="export-date-to" class="form-label" style="font-size: 12px;">Au</label>
+                            <input type="date" id="export-date-to" class="form-input" style="font-size: 13px; padding: 8px 12px;">
+                        </div>
+                    </div>
+                    <!-- Quick range presets -->
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;">
+                        <button type="button" class="export-preset-btn" data-preset="week" style="font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border-color); background: white; cursor: pointer; color: var(--text-primary); transition: all 0.2s;">Cette semaine</button>
+                        <button type="button" class="export-preset-btn" data-preset="lastweek" style="font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border-color); background: white; cursor: pointer; color: var(--text-primary); transition: all 0.2s;">Semaine dernière</button>
+                        <button type="button" class="export-preset-btn" data-preset="month" style="font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border-color); background: white; cursor: pointer; color: var(--text-primary); transition: all 0.2s;">Ce mois</button>
+                        <button type="button" class="export-preset-btn" data-preset="lastmonth" style="font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border-color); background: white; cursor: pointer; color: var(--text-primary); transition: all 0.2s;">Mois dernier</button>
+                    </div>
+                </div>
+
+                <!-- View selection -->
+                <div style="background: var(--bg-primary); border-radius: 10px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border-color);">
+                    <label style="font-size: 12px; font-weight: 700; color: var(--gray-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 12px;">👁️ Vue à exporter</label>
+                    <div style="display: flex; gap: 10px;">
+                        <label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 10px; border: 2px solid var(--primary); border-radius: 8px; cursor: pointer; background: var(--primary-light);">
+                            <input type="radio" name="export-view" id="export-view-chantiers" value="chantiers" checked style="accent-color: var(--primary);">
+                            <span style="font-size: 13px; font-weight: 600; color: var(--primary);">Par chantier</span>
+                        </label>
+                        <label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 10px; border: 2px solid var(--border-color); border-radius: 8px; cursor: pointer; background: white;" id="export-view-users-label">
+                            <input type="radio" name="export-view" id="export-view-users" value="users" style="accent-color: var(--primary);">
+                            <span style="font-size: 13px; font-weight: 600; color: var(--gray-muted);">Par utilisateur</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Format selection -->
+                <div style="background: var(--bg-primary); border-radius: 10px; padding: 16px; border: 1px solid var(--border-color);">
+                    <label style="font-size: 12px; font-weight: 700; color: var(--gray-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 12px;">📄 Format d'export</label>
+                    <div style="display: flex; gap: 10px;">
+                        <label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 10px; border: 2px solid var(--primary); border-radius: 8px; cursor: pointer; background: var(--primary-light);">
+                            <input type="radio" name="export-format" id="export-format-csv" value="csv" checked style="accent-color: var(--primary);">
+                            <div>
+                                <div style="font-size: 13px; font-weight: 600; color: var(--primary);">CSV</div>
+                                <div style="font-size: 11px; color: var(--gray-muted);">Excel, LibreOffice</div>
+                            </div>
+                        </label>
+                        <label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 10px; border: 2px solid var(--border-color); border-radius: 8px; cursor: pointer; background: white;">
+                            <input type="radio" name="export-format" id="export-format-json" value="json" style="accent-color: var(--primary);">
+                            <div>
+                                <div style="font-size: 13px; font-weight: 600; color: var(--gray-muted);">JSON</div>
+                                <div style="font-size: 11px; color: var(--gray-muted);">Développeurs</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--border-color); padding: 16px 24px;">
+                <button type="button" class="btn btn-secondary" id="btn-cancel-export-modal" style="padding: 10px 16px;">Annuler</button>
+                <button type="button" class="btn btn-primary" id="btn-confirm-export-hours" style="background: var(--accent); padding: 10px 20px; display: inline-flex; align-items: center; gap: 8px;">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Télécharger
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script inclusion -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js"></script>
+</body>
+</html>

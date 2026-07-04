@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion — LogoBatir Planning</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --primary: #5B47E0;
+            --primary-dark: #4338ca;
+            --accent: #7C3AED;
+            --bg: #f5f4ff;
+            --text: #1e1b4b;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --white: #ffffff;
+            --error: #dc2626;
+            --success: #10b981;
+            --font: 'Plus Jakarta Sans', sans-serif;
+            --heading: 'Sora', sans-serif;
+        }
+
+        html, body {
+            height: 100%;
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .login-page {
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* === LEFT PANEL — Branding === */
+        .login-left {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 48px;
+            background: linear-gradient(145deg, #4f46e5 0%, #7c3aed 50%, #5b47e0 100%);
+            color: white;
+            width: 45%;
+            min-width: 380px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-left::before {
+            content: '';
+            position: absolute;
+            top: -120px;
+            right: -80px;
+            width: 350px;
+            height: 350px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        .login-left::after {
+            content: '';
+            position: absolute;
+            bottom: -80px;
+            left: -60px;
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .brand-area {
+            position: relative;
+            z-index: 1;
+        }
+
+        .brand-logo-img {
+            height: 44px;
+            filter: brightness(0) invert(1);
+            margin-bottom: 40px;
+        }
+
+        .brand-headline {
+            font-family: var(--heading);
+            font-size: 32px;
+            font-weight: 700;
+            line-height: 1.25;
+            margin-bottom: 16px;
+        }
+
+        .brand-sub {
+            font-size: 15px;
+            opacity: 0.8;
+            line-height: 1.6;
+            max-width: 340px;
+        }
+
+        .brand-features {
+            list-style: none;
+            margin-top: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .brand-features li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .feature-icon {
+            width: 32px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 15px;
+        }
+
+        .brand-footer-text {
+            position: relative;
+            z-index: 1;
+            font-size: 12px;
+            opacity: 0.55;
+        }
+
+        /* === RIGHT PANEL — Form === */
+        .login-right {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 48px 32px;
+            background: var(--white);
+        }
+
+        .login-box {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .login-title {
+            font-family: var(--heading);
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+
+        .login-subtitle {
+            font-size: 14px;
+            color: var(--muted);
+            margin-bottom: 36px;
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 7px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 9px;
+            font-family: var(--font);
+            font-size: 14px;
+            color: var(--text);
+            background: white;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(91, 71, 224, 0.12);
+        }
+
+        .form-input::placeholder {
+            color: #c4c4c4;
+        }
+
+        /* Password field with toggle */
+        .password-wrapper {
+            position: relative;
+        }
+
+        .password-wrapper .form-input {
+            padding-right: 44px;
+        }
+
+        .btn-toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--muted);
+            padding: 8px; /* Larger clickable area */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.15s;
+            z-index: 99;
+        }
+
+        .btn-toggle-password svg {
+            pointer-events: none; /* Let clicks pass through to the button */
+        }
+
+        .btn-toggle-password:hover {
+            color: var(--primary);
+        }
+
+        /* Submit button */
+        .btn-login {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            border: none;
+            border-radius: 9px;
+            font-family: var(--font);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.15s;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            letter-spacing: 0.2px;
+        }
+
+        .btn-login:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .btn-login:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Spinner */
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2.5px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Alert messages */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 9px;
+            font-size: 13.5px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert.error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: var(--error);
+        }
+
+        .alert.success {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: var(--success);
+        }
+
+        .alert.show {
+            display: flex;
+        }
+
+        /* Divider */
+        .form-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 24px 0;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .form-divider::before,
+        .form-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* Footer note */
+        .login-footer-note {
+            margin-top: 28px;
+            text-align: center;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .login-footer-note a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        /* =================== MOBILE =================== */
+        @media (max-width: 768px) {
+            .login-page {
+                flex-direction: column;
+            }
+
+            .login-left {
+                width: 100%;
+                min-width: unset;
+                padding: 32px 24px 28px;
+            }
+
+            .brand-headline {
+                font-size: 22px;
+            }
+
+            .brand-features {
+                display: none;
+            }
+
+            .brand-footer-text {
+                display: none;
+            }
+
+            .brand-area {
+                display: flex;
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .brand-logo-img {
+                height: 34px;
+                margin-bottom: 0;
+            }
+
+            .login-right {
+                padding: 36px 20px;
+            }
+
+            .login-box {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-page">
+
+        <!-- Left Branding Panel -->
+        <div class="login-left">
+            <div class="brand-area">
+                <img src="logobatir.png" alt="LogoBatir" class="brand-logo-img">
+                <h1 class="brand-headline">Gerez vos chantiers en toute simplicite</h1>
+                <p class="brand-sub">Planifiez, suivez et analysez l'activite de vos equipes en temps reel depuis un seul tableau de bord.</p>
+                <ul class="brand-features">
+                    <li>
+                        <span class="feature-icon">📅</span>
+                        <span>Planning hebdomadaire et mensuel</span>
+                    </li>
+                    <li>
+                        <span class="feature-icon">⏱️</span>
+                        <span>Feuilles d'heures et export CSV</span>
+                    </li>
+                    <li>
+                        <span class="feature-icon">👥</span>
+                        <span>Gestion des equipes et compagnons</span>
+                    </li>
+                    <li>
+                        <span class="feature-icon">📊</span>
+                        <span>Tableau de bord en temps reel</span>
+                    </li>
+                </ul>
+            </div>
+            <p class="brand-footer-text">&copy; 2026 LogoBatir. Tous droits reserves.</p>
+        </div>
+
+        <!-- Right Form Panel -->
+        <div class="login-right">
+            <div class="login-box">
+                <h2 class="login-title">Connexion</h2>
+                <p class="login-subtitle">Entrez vos identifiants pour acceder a votre espace.</p>
+
+                <!-- Error / Success alerts -->
+                <div class="alert error" id="login-error">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <span id="login-error-text">Identifiants incorrects.</span>
+                </div>
+
+                <div class="alert success" id="login-success">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 6 9 17l-5-5"/>
+                    </svg>
+                    <span>Connexion reussie ! Redirection en cours...</span>
+                </div>
+
+                <!-- Login Form -->
+                <form id="login-form" autocomplete="on">
+                    <div class="form-group">
+                        <label for="login-email" class="form-label">Adresse e-mail</label>
+                        <input
+                            type="email"
+                            id="login-email"
+                            class="form-input"
+                            placeholder="votre@email.com"
+                            required
+                            autocomplete="email"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="login-password" class="form-label">Mot de passe</label>
+                        <div class="password-wrapper">
+                            <input
+                                type="password"
+                                id="login-password"
+                                class="form-input"
+                                placeholder="••••••••"
+                                required
+                                autocomplete="current-password"
+                            >
+                            <button type="button" class="btn-toggle-password" id="btn-toggle-pwd" title="Afficher/Masquer le mot de passe">
+                                <svg id="eye-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-login" id="btn-login">
+                        <div class="spinner" id="login-spinner"></div>
+                        <span id="login-btn-text">Se connecter</span>
+                        <svg id="login-btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                        </svg>
+                    </button>
+                </form>
+
+                <div class="login-footer-note">
+                    Acces reserve aux membres de l'equipe.<br>
+                    Besoin d'un compte ? <a href="mailto:contact@logobatir.fr">Contactez l'administrateur</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = "https://hxnfcqrykmbsqqwugbxc.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_9SaZgJq1R_Jo7uI3GjC0TA_9kSRZWn5";
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Check active session
+        (async () => {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                window.location.replace('index.html');
+            }
+        })();
+
+        // Toggle password
+        const pwdInput = document.getElementById('login-password');
+        const btnTogglePwd = document.getElementById('btn-toggle-pwd');
+        const eyeIcon = document.getElementById('eye-icon');
+
+        if (btnTogglePwd && pwdInput && eyeIcon) {
+            btnTogglePwd.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (pwdInput.type === 'password') {
+                    pwdInput.type = 'text';
+                    eyeIcon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+                } else {
+                    pwdInput.type = 'password';
+                    eyeIcon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+                }
+            });
+        }
+
+        // Submit form
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+
+            const btnLogin = document.getElementById('btn-login');
+            const spinner = document.getElementById('login-spinner');
+            const btnText = document.getElementById('login-btn-text');
+            const btnIcon = document.getElementById('login-btn-icon');
+            const errorEl = document.getElementById('login-error');
+            const errorText = document.getElementById('login-error-text');
+            const successEl = document.getElementById('login-success');
+
+            errorEl.classList.remove('show');
+            successEl.classList.remove('show');
+            btnLogin.disabled = true;
+            spinner.style.display = 'block';
+            btnText.textContent = 'Connexion...';
+            btnIcon.style.display = 'none';
+
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+                if (error) {
+                    let msg = 'Identifiants incorrects. Verifiez votre e-mail et votre mot de passe.';
+                    if (error.message.includes('Email not confirmed')) {
+                        msg = 'Votre e-mail n\'a pas encore ete confirme. Verifiez votre boite mail.';
+                    } else if (error.message.includes('Invalid login credentials')) {
+                        msg = 'E-mail ou mot de passe incorrect.';
+                    } else if (error.message.includes('Too many requests')) {
+                        msg = 'Trop de tentatives. Veuillez patienter quelques minutes.';
+                    }
+                    errorText.textContent = msg;
+                    errorEl.classList.add('show');
+                    btnLogin.disabled = false;
+                    spinner.style.display = 'none';
+                    btnText.textContent = 'Se connecter';
+                    btnIcon.style.display = '';
+                    return;
+                }
+
+                successEl.classList.add('show');
+                btnText.textContent = 'Connecte !';
+                setTimeout(() => {
+                    window.location.replace('index.html');
+                }, 800);
+
+            } catch (err) {
+                errorText.textContent = 'Erreur de connexion. Verifiez votre connexion internet.';
+                errorEl.classList.add('show');
+                btnLogin.disabled = false;
+                spinner.style.display = 'none';
+                btnText.textContent = 'Se connecter';
+                btnIcon.style.display = '';
+            }
+        });
+    </script>
+</body>
+</html>
