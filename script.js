@@ -1665,7 +1665,14 @@ function initModals() {
                 const color = document.getElementById('edit-user-color-input').value;
 
                 if (useSupabase) {
-                    await supabaseClient.from('utilisateurs').update({ firstname, lastname, phone, role, type, color }).eq('id', userId);
+                    try {
+                        const { error } = await supabaseClient.from('utilisateurs').update({ firstname, lastname, phone, role, type, color }).eq('id', userId);
+                        if (error) throw error;
+                    } catch (err) {
+                        console.warn("La modification complète a échoué (colonne color absente dans Supabase). Repli sur les champs de base.", err);
+                        // Fallback: update only core fields that are guaranteed to exist
+                        await supabaseClient.from('utilisateurs').update({ firstname, lastname, phone, role, type }).eq('id', userId);
+                    }
                     await loadDataFromSupabase();
                 } else {
                     const idx = users.findIndex(u => u.id === userId);
@@ -1843,7 +1850,24 @@ function initForms() {
         };
 
         if (useSupabase) {
-            await supabaseClient.from('utilisateurs').insert([newUser]);
+            try {
+                // Try inserting with all fields (color, code, etc.)
+                const { error } = await supabaseClient.from('utilisateurs').insert([newUser]);
+                if (error) throw error;
+            } catch (err) {
+                console.warn("L'insertion complète a échoué (colonnes color/code probablement absentes dans Supabase). Repli sur les champs de base.", err);
+                // Fallback: insert only core columns that exist in the default schema
+                const coreUser = {
+                    id: newUser.id,
+                    firstname: newUser.firstname,
+                    lastname: newUser.lastname,
+                    role: newUser.role,
+                    type: newUser.type,
+                    status: newUser.status,
+                    phone: newUser.phone
+                };
+                await supabaseClient.from('utilisateurs').insert([coreUser]);
+            }
             await supabaseClient.from('dashboard_activities').insert([{ activity_text: `Nouvel utilisateur ajouté : ${firstname} ${lastname}` }]);
             await loadDataFromSupabase();
         } else {
