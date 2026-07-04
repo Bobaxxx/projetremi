@@ -2962,7 +2962,7 @@ function renderChantierDetail() {
                 </div>
             </div>
             <div style="display: flex; align-items: center; gap: 12px;">
-                <button class="btn btn-secondary" onclick="alert('Exportation du rapport PDF en cours...')" style="font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                <button class="btn btn-secondary" onclick="exportChantierPDF('${ch.id}')" style="font-size: 13px; display: flex; align-items: center; gap: 6px;">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                         <polyline points="7 10 12 15 17 10"/>
@@ -4041,3 +4041,367 @@ function openEditChantierMemo(e, id) {
     if (e) e.stopPropagation();
     openEditMemoModal(id);
 }
+
+// PDF Export function for Chantier Detail
+function exportChantierPDF(chantierId) {
+    const ch = chantiers.find(c => c.id === chantierId);
+    if (!ch) {
+        alert("Chantier introuvable.");
+        return;
+    }
+
+    // Get planning assignments
+    const assignments = [];
+    Object.keys(planningAllocations[ch.id] || {}).forEach(uId => {
+        const user = users.find(u => u.id === uId);
+        if (user) {
+            assignments.push(user);
+        }
+    });
+
+    // Get documents
+    const documents = chantierDocuments[ch.id] || [];
+
+    // Get feeds/memos
+    const feeds = chantierFeeds[ch.id] || [];
+
+    // Create a new window for print document
+    const printWindow = window.open('', '_blank', 'width=900,height=800');
+    if (!printWindow) {
+        alert("Le bloqueur de fenêtres pop-up a empêché l'exportation. Veuillez autoriser les pop-ups pour ce site.");
+        return;
+    }
+
+    const pct = Math.min(100, Math.round((ch.workedHours / ch.budgetHours) * 100));
+
+    // Construct the print layout
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html lang="fr">
+        <head>
+            <meta charset="UTF-8">
+            <title>Rapport de chantier — ${ch.name}</title>
+            <style>
+                @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+                
+                body {
+                    font-family: 'Plus Jakarta Sans', sans-serif;
+                    color: #1e1b4b;
+                    margin: 0;
+                    padding: 40px;
+                    background-color: #ffffff;
+                    font-size: 14px;
+                    line-height: 1.5;
+                }
+
+                /* Header style */
+                .report-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    border-bottom: 2px solid #5B47E0;
+                    padding-bottom: 20px;
+                    margin-bottom: 30px;
+                }
+
+                .logo-container img {
+                    height: 36px;
+                    filter: brightness(0) saturate(100%) invert(28%) sepia(86%) saturate(1600%) hue-rotate(235deg) brightness(95%) contrast(95%);
+                }
+
+                .report-title-container {
+                    text-align: right;
+                }
+
+                .report-title {
+                    font-size: 20px;
+                    font-weight: 700;
+                    color: #5B47E0;
+                    margin: 0 0 5px 0;
+                }
+
+                .report-date {
+                    font-size: 12px;
+                    color: #6b7280;
+                    margin: 0;
+                }
+
+                /* Main Grid */
+                .grid-two-cols {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 30px;
+                    margin-bottom: 30px;
+                }
+
+                .section-title {
+                    font-size: 15px;
+                    font-weight: 700;
+                    color: #1e1b4b;
+                    border-bottom: 1px solid #e5e7eb;
+                    padding-bottom: 8px;
+                    margin-top: 0;
+                    margin-bottom: 15px;
+                }
+
+                /* Info table card */
+                .info-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+
+                .info-table td {
+                    padding: 10px 0;
+                    border-bottom: 1px solid #f3f4f6;
+                }
+
+                .info-table td.label {
+                    color: #6b7280;
+                    font-weight: 500;
+                    width: 40%;
+                }
+
+                .info-table td.value {
+                    font-weight: 600;
+                    color: #111827;
+                    text-align: right;
+                }
+
+                /* Budget Progress */
+                .budget-progress-container {
+                    background: #f8fafc;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 10px;
+                    padding: 16px;
+                    box-sizing: border-box;
+                }
+
+                .progress-bar-bg {
+                    height: 10px;
+                    background: #e2e8f0;
+                    border-radius: 5px;
+                    overflow: hidden;
+                    margin: 12px 0;
+                }
+
+                .progress-bar-fill {
+                    height: 100%;
+                    background: #7C3AED;
+                    border-radius: 5px;
+                }
+
+                /* Assignment block */
+                .card {
+                    border: 1px solid #e2e8f0;
+                    border-radius: 10px;
+                    padding: 16px;
+                    margin-bottom: 24px;
+                }
+
+                .table-data {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-top: 10px;
+                }
+
+                .table-data th {
+                    text-align: left;
+                    background-color: #f8fafc;
+                    padding: 10px 12px;
+                    font-size: 12px;
+                    font-weight: 600;
+                    color: #4b5563;
+                    border-bottom: 1px solid #e2e8f0;
+                }
+
+                .table-data td {
+                    padding: 12px;
+                    border-bottom: 1px solid #f3f4f6;
+                    font-size: 13px;
+                }
+
+                /* Feeds/Memos area */
+                .feed-item {
+                    border-left: 3px solid #5B47E0;
+                    padding-left: 12px;
+                    margin-bottom: 16px;
+                }
+
+                .feed-item-header {
+                    font-size: 12px;
+                    font-weight: 600;
+                    color: #4b5563;
+                    margin-bottom: 4px;
+                }
+
+                .feed-item-body {
+                    font-size: 13px;
+                    color: #1f2937;
+                }
+
+                /* Footer */
+                .print-footer {
+                    margin-top: 50px;
+                    text-align: center;
+                    font-size: 11px;
+                    color: #9ca3af;
+                    border-top: 1px solid #e5e7eb;
+                    padding-top: 15px;
+                }
+
+                @media print {
+                    body {
+                        padding: 0;
+                    }
+                    button {
+                        display: none !important;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <!-- Header bar -->
+            <div class="report-header">
+                <div class="logo-container">
+                    <img src="logobatir.png" alt="LogoBatir">
+                </div>
+                <div class="report-title-container">
+                    <h1 class="report-title">RAPPORT DE CHANTIER</h1>
+                    <p class="report-date">Généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})}</p>
+                </div>
+            </div>
+
+            <div class="grid-two-cols">
+                <!-- Info card -->
+                <div>
+                    <h2 class="section-title">Fiche d'identité</h2>
+                    <table class="info-table">
+                        <tr>
+                            <td class="label">Nom du chantier</td>
+                            <td class="value">${ch.name}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Client</td>
+                            <td class="value">${ch.client}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Adresse</td>
+                            <td class="value">${ch.address}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Statut</td>
+                            <td class="value">${ch.status}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- Hours Budget card -->
+                <div>
+                    <h2 class="section-title">Suivi des heures</h2>
+                    <div class="budget-progress-container">
+                        <table class="info-table" style="margin-bottom: 10px;">
+                            <tr>
+                                <td style="padding: 0; border: none;" class="label">Budget Total</td>
+                                <td style="padding: 0; border: none;" class="value">${ch.budgetHours} h</td>
+                            </tr>
+                            <tr style="border: none;">
+                                <td style="padding: 6px 0 0 0; border: none;" class="label">Heures consomées</td>
+                                <td style="padding: 6px 0 0 0; border: none;" class="value">${ch.workedHours} h</td>
+                            </tr>
+                        </table>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" style="width: ${pct}%;"></div>
+                        </div>
+                        <div style="font-size: 12px; color: #6b7280; font-weight: 500;">
+                            Consommé à ${pct}% du budget alloué.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Team assignments -->
+            <h2 class="section-title">Équipe affectée</h2>
+            <div class="card" style="padding: 0; overflow: hidden;">
+                <table class="table-data">
+                    <thead>
+                        <tr>
+                            <th>Compagnon</th>
+                            <th>Rôle</th>
+                            <th>Téléphone</th>
+                            <th>Type</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${assignments.length === 0 
+                            ? `<tr><td colspan="4" style="text-align: center; color: #9ca3af; font-style: italic;">Aucun compagnon actuellement affecté à ce chantier.</td></tr>` 
+                            : assignments.map(u => `
+                                <tr>
+                                    <td style="font-weight: 600;">${u.firstname} ${u.lastname}</td>
+                                    <td>${u.role}</td>
+                                    <td>${u.phone || 'Non renseigné'}</td>
+                                    <td>${u.type}</td>
+                                </tr>
+                            `).join('')
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Recent activity feeds / memos -->
+            <h2 class="section-title">Dernières actualités / Mémos</h2>
+            <div class="card">
+                ${feeds.length === 0 
+                    ? `<div style="color: #9ca3af; font-style: italic; font-size: 13px;">Aucune actualité ou note récente publiée pour ce chantier.</div>` 
+                    : feeds.slice(0, 5).map(f => `
+                        <div class="feed-item">
+                            <div class="feed-item-header">Par ${f.author} — le ${f.time || 'Récemment'}</div>
+                            <div class="feed-item-body">${f.content}</div>
+                        </div>
+                    `).join('')
+                }
+            </div>
+
+            <!-- Documents -->
+            <h2 class="section-title">Documents de chantier</h2>
+            <div class="card" style="padding: 0; overflow: hidden;">
+                <table class="table-data">
+                    <thead>
+                        <tr>
+                            <th>Nom du document</th>
+                            <th>Taille</th>
+                            <th>Auteur</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${documents.length === 0 
+                            ? `<tr><td colspan="3" style="text-align: center; color: #9ca3af; font-style: italic;">Aucun document partagé sur ce chantier.</td></tr>` 
+                            : documents.map(d => `
+                                <tr>
+                                    <td style="font-weight: 500;">📄 ${d.name}</td>
+                                    <td>${d.file_size}</td>
+                                    <td>${d.author}</td>
+                                </tr>
+                            `).join('')
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Print Footer -->
+            <div class="print-footer">
+                Document confidentiel généré par la plateforme LogoBatir Planning.
+            </div>
+
+            <script>
+                // Wait for the window to load its resources (like images if any), then print
+                window.onload = function() {
+                    window.print();
+                };
+            </script>
+        </body>
+        </html>
+    `);
+
+    printWindow.document.close();
+}
+
