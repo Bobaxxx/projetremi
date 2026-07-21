@@ -422,8 +422,7 @@
                             <span class="badge badge-accent" style="margin-left: 6px;">Beta</span>
                             <span class="planning-report-issue" style="margin-left: 16px; font-size: 13px; color: var(--primary); cursor: pointer; text-decoration: underline;">Signaler une anomalie</span>
                         </div>
-                        <!-- DIFFUSION WHATSAPP: bouton masqué temporairement (réactiver en retirant display:none) -->
-                        <button class="btn btn-primary" id="btn-open-diffusion-modal" style="display: none; background: var(--accent); padding: 10px 16px; display: none; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; border-radius: 8px; border: none; color: white; cursor: pointer;">
+                        <button class="btn btn-primary" id="btn-open-diffusion-modal" style="background: var(--accent); padding: 10px 16px; display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; border-radius: 8px; border: none; color: white; cursor: pointer;">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="-5.0 -10.0 110.0 135.0" width="18" height="18" fill="white">
                                 <g>
                                     <path d="m62.5 34.723h-20.832c-2.2969 0-4.168 1.8672-4.168 4.168v1.3906h-1.3906c-2.2969 0-4.168 1.8672-4.168 4.168v16.668c0 2.2969 1.8672 4.168 4.168 4.168h26.391c2.2969 0 4.1641-1.8711 4.1641-4.168v-22.223c0-2.2969-1.8672-4.168-4.168-4.168zm-26.391 27.777c-0.76562 0-1.3906-0.625-1.3906-1.3906v-16.668c0-0.76562 0.62109-1.3906 1.3906-1.3906h20.832c0.76562 0 1.3906 0.625 1.3906 1.3906v16.668c0 0.48828 0.085938 0.95312 0.23828 1.3906zm27.781-1.3906c0 0.76562-0.62109 1.3906-1.3906 1.3906-0.76562 0-1.3906-0.625-1.3906-1.3906v-16.668c0-2.2969-1.8672-4.168-4.168-4.168h-16.668v-1.3906c0-0.76562 0.62109-1.3906 1.3906-1.3906h20.832c0.76562 0 1.3906 0.625 1.3906 1.3906v22.223z"/>
@@ -1813,7 +1812,8 @@
                 <button class="modal-close" id="btn-close-diffusion-modal" style="color: white; opacity: 0.8; font-size: 24px; cursor: pointer; background: none; border: none;">&times;</button>
             </div>
             <div class="modal-body" style="padding: 24px;">
-                <div style="display: flex; gap: 16px; align-items: center; background: #f1f5f9; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+                <!-- Canal d'envoi WhatsApp/SMS masqué temporairement (réactiver en retirant display:none) -->
+                <div style="display: none; gap: 16px; align-items: center; background: #f1f5f9; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
                     <span style="font-weight: 600; font-size: 13.5px; color: var(--text-primary);">Canal d'envoi :</span>
                     <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text-primary);">
                         <input type="radio" name="diffusion-channel" value="whatsapp" checked style="accent-color: var(--accent);">
