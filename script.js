@@ -856,7 +856,7 @@ function initTabs() {
 function switchTab(tabId) {
     if (!isAdmin) {
         const forbiddenTabs = isOuvrier 
-            ? ['users', 'settings', 'user-detail'] 
+            ? ['users', 'settings', 'user-detail', 'chantiers'] 
             : ['users', 'user-detail'];
         if (forbiddenTabs.includes(tabId)) {
             tabId = 'dashboard';
@@ -5268,49 +5268,86 @@ function applyRolePermissions() {
     const toggleChantiers = document.getElementById('plan-toggle-chantiers');
     const toggleUsers = document.getElementById('plan-toggle-users');
 
-    // Reset all sidebar links visibility to default
-    const allTabs = ['users', 'chantiers', 'planning', 'hours', 'settings'];
+    // ─── Reset sidebar nav links to default (all visible) ────────────────────
+    const allTabs = ['dashboard', 'memos', 'users', 'chantiers', 'planning', 'hours', 'settings'];
     allTabs.forEach(tab => {
         const el = document.querySelector(`.sidebar-nav [data-tab="${tab}"]`);
         if (el) el.style.display = '';
     });
 
+    // ─── Reset toolbar/action buttons ────────────────────────────────────────
+    const btnAddUser = document.getElementById('btn-open-user-modal');
+    const btnAddChantier = document.getElementById('btn-open-chantier-modal');
+    const btnDiffusion = document.getElementById('btn-open-diffusion-modal');
+    const hoursToggleWrap = document.querySelector('.planning-type-toggle');  // Toggle Chantiers/Utilisateurs in hours
+    const hoursFiltersRow = document.querySelector('.hours-filters-row');
+
+    if (btnAddUser) btnAddUser.style.display = '';
+    if (btnAddChantier) btnAddChantier.style.display = '';
+    if (btnDiffusion) btnDiffusion.style.display = '';
+    if (hoursToggleWrap) hoursToggleWrap.style.display = '';
+    if (hoursFiltersRow) hoursFiltersRow.style.display = '';
+
+    // ─── ADMIN ────────────────────────────────────────────────────────────────
     if (isAdmin) {
-        // Show Admin dashboard and hide worker dashboard
+        // Show admin dashboard, hide worker dashboard
         const adminView = document.getElementById('admin-dashboard-view');
         const workerView = document.getElementById('worker-dashboard-view');
         if (adminView) adminView.style.display = 'block';
         if (workerView) workerView.style.display = 'none';
 
+        // Planning toggle labels
         if (toggleChantiers && toggleUsers) {
             toggleChantiers.childNodes[toggleChantiers.childNodes.length - 1].textContent = ' Chantiers';
             toggleUsers.childNodes[toggleUsers.childNodes.length - 1].textContent = ' Utilisateurs';
         }
-        return; 
+        return;
     }
 
-    // Non-admin (Worker / Foreman) views configuration
+    // ─── NON-ADMIN (Chef / Ouvrier) ───────────────────────────────────────────
     const adminView = document.getElementById('admin-dashboard-view');
     const workerView = document.getElementById('worker-dashboard-view');
     if (adminView) adminView.style.display = 'none';
     if (workerView) workerView.style.display = 'flex';
 
+    // Planning toggle labels renamed for non-admin
     if (toggleChantiers && toggleUsers) {
         toggleChantiers.childNodes[toggleChantiers.childNodes.length - 1].textContent = ' Planning Général';
         toggleUsers.childNodes[toggleUsers.childNodes.length - 1].textContent = ' Mon planning';
-        
-        // Invert default view for workers to show "Mon planning" first
+        // Set default to "Mon planning" for workers
         currentPlanningView = 'users';
         toggleChantiers.classList.remove('active');
         toggleUsers.classList.add('active');
     }
 
-    // Hide sidebar links that are not allowed
-    const tabsToHide = isOuvrier ? ['users', 'settings'] : ['users'];
+    // Tabs to hide in sidebar depending on role
+    const tabsToHide = isOuvrier ? ['users', 'chantiers', 'settings'] : ['users'];
     tabsToHide.forEach(tab => {
         const el = document.querySelector(`.sidebar-nav [data-tab="${tab}"]`);
         if (el) el.style.display = 'none';
     });
+
+    // ─── Masquage des boutons réservés aux admins/chefs ───────────────────────
+    if (isOuvrier) {
+        // Masquer les boutons de création (admin only)
+        if (btnAddUser) btnAddUser.style.display = 'none';
+        if (btnAddChantier) btnAddChantier.style.display = 'none';
+
+        // Masquer le toggle chantiers/utilisateurs dans les heures (ouvrier voit uniquement ses heures)
+        if (hoursToggleWrap) hoursToggleWrap.style.display = 'none';
+
+        // Masquer les filtres de sélection chantier/état dans les heures (pas pertinents pour un ouvrier)
+        if (hoursFiltersRow) hoursFiltersRow.style.display = 'none';
+
+        // Forcer la vue chantiers dans les heures pour l'ouvrier (ses heures par chantier)
+        currentHoursView = 'chantiers';
+    }
+
+    if (!isAdmin) {
+        // Chef et Ouvrier : masquer le bouton diffusion si pas admin
+        // Chef peut le voir (géré dans initDiffusionFeatures), ouvrier non
+        if (isOuvrier && btnDiffusion) btnDiffusion.style.display = 'none';
+    }
 
     // Populate worker dashboard content
     let user = currentUserProfile;
@@ -5481,16 +5518,6 @@ function applyRolePermissions() {
         });
     }
 
-    // Toggle administrative project creation buttons
-    const btnCreateChantier = document.getElementById('btn-open-chantier-modal');
-    if (btnCreateChantier) {
-        btnCreateChantier.style.display = isAdmin ? '' : 'none';
-    }
-
-    const btnOpenDiff = document.getElementById('btn-open-diffusion-modal');
-    if (btnOpenDiff) {
-        btnOpenDiff.style.display = (isAdmin || isChef) ? '' : 'none';
-    }
 }
 
 // =============================================================================
