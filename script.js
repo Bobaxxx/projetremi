@@ -5438,7 +5438,7 @@ function applyRolePermissions() {
         `;
     }
 
-    // Bind worker view hours modal trigger
+    // Bind worker view hours button to redirect to "hours" tab
     const btnViewHours = document.getElementById('btn-worker-view-hours');
     if (btnViewHours) {
         // Clone and replace to prevent duplicate events on re-init
@@ -5446,28 +5446,7 @@ function applyRolePermissions() {
         btnViewHours.parentNode.replaceChild(newBtn, btnViewHours);
         
         newBtn.addEventListener('click', () => {
-            const modal = document.getElementById('worker-hours-modal');
-            const listContainer = document.getElementById('worker-modal-hours-list');
-            const daysOfWeek = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
-
-            if (modal && listContainer) {
-                if (!assignedChantier) {
-                    listContainer.innerHTML = `<div class="empty-state">Aucun chantier affecté pour lister les heures</div>`;
-                } else {
-                    const userHours = hoursAllocations[assignedChantier.id]?.[user.id] || {};
-                    listContainer.innerHTML = daysOfWeek.map((day, idx) => {
-                        const val = userHours[idx] || '00:00';
-                        const hasHours = val !== '00:00' && val !== 'À compléter';
-                        return `
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; background: ${hasHours ? '#f0fdf4' : '#f8fafc'};">
-                                <span style="font-weight: 700; color: #334155; font-size: 13.5px;">${day}</span>
-                                <span style="font-weight: 800; color: ${hasHours ? '#16a34a' : '#64748b'}; font-size: 13.5px;">${val}</span>
-                            </div>
-                        `;
-                    }).join('');
-                }
-                modal.classList.add('show');
-            }
+            switchTab('hours');
         });
     }
 
