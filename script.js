@@ -5356,6 +5356,88 @@ function applyRolePermissions() {
         }
     }
 
+    // Populate Worker Hours Preview Card (Total + 5-day mini bar + Validation status)
+    const hoursPreviewContainer = document.getElementById('worker-hours-preview-container');
+    if (hoursPreviewContainer) {
+        const shortDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven'];
+        let totalHoursFloat = 0;
+        let dayHoursList = [0, 0, 0, 0, 0];
+        let isValidated = true;
+        let hasAnyAllocation = false;
+
+        if (assignedChantier) {
+            const userHoursObj = hoursAllocations[assignedChantier.id]?.[user.id] || {};
+            const userPlanningObj = planningAllocations[assignedChantier.id]?.[user.id] || { days: [0, 1, 2, 3, 4] };
+
+            for (let dayIdx = 0; dayIdx < 5; dayIdx++) {
+                if (userPlanningObj.days && userPlanningObj.days.includes(dayIdx)) {
+                    hasAnyAllocation = true;
+                    let valStr = userHoursObj[dayIdx] || '08:00';
+                    let hVal = 8.0;
+
+                    if (valStr.includes(':')) {
+                        const parts = valStr.split(':');
+                        hVal = parseFloat(parts[0]) + (parseFloat(parts[1]) / 60);
+                    } else if (!isNaN(parseFloat(valStr))) {
+                        hVal = parseFloat(valStr);
+                    }
+
+                    if (valStr === 'À compléter' || valStr === '00:00') {
+                        isValidated = false;
+                        hVal = 0;
+                    }
+
+                    dayHoursList[dayIdx] = hVal;
+                    totalHoursFloat += hVal;
+                }
+            }
+        }
+
+        const totalHoursFormatted = totalHoursFloat > 0 ? totalHoursFloat.toFixed(1) + ' h' : '0.0 h';
+        const statusBadgeHtml = (!hasAnyAllocation || totalHoursFloat === 0) 
+            ? `<span style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 99px; background: #f1f5f9; color: #64748b;">Aucune heure</span>`
+            : (isValidated 
+                ? `<span style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 99px; background: #dcfce7; color: #15803d; display: inline-flex; align-items: center; gap: 4px;">✓ Validées par le chef</span>`
+                : `<span style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 99px; background: #fff7ed; color: #c2410c; display: inline-flex; align-items: center; gap: 4px;">⏳ En attente de saisie</span>`
+            );
+
+        hoursPreviewContainer.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 14px; width: 100%; margin: 4px 0 8px 0;">
+                <!-- Total + Status Header -->
+                <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 12px 14px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                    <div>
+                        <span style="font-size: 11px; font-weight: 700; color: var(--gray-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 2px;">Total Semaine</span>
+                        <span style="font-family: var(--font-heading); font-size: 26px; font-weight: 800; color: var(--primary); font-feature-settings: 'tnum';">${totalHoursFormatted}</span>
+                    </div>
+                    <div>
+                        ${statusBadgeHtml}
+                    </div>
+                </div>
+
+                <!-- 5-Day Mini Bar (Lun-Ven) -->
+                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; width: 100%;">
+                    ${shortDays.map((dName, dIdx) => {
+                        const hrs = dayHoursList[dIdx];
+                        const isDone = hrs > 0;
+                        const todayDay = new Date().getDay();
+                        const isToday = (todayDay === (dIdx + 1));
+
+                        const bgStyle = isDone ? 'background: #ede9fe; border: 1px solid #c4b5fd;' : 'background: #f8fafc; border: 1px solid #e2e8f0;';
+                        const txtColor = isDone ? 'color: var(--accent);' : 'color: #94a3b8;';
+                        const todayRing = isToday ? 'outline: 2px solid var(--accent); outline-offset: -1px;' : '';
+
+                        return `
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px; border-radius: 8px; ${bgStyle} ${todayRing} text-align: center;">
+                                <span style="font-size: 11px; font-weight: 700; color: #475569;">${dName}</span>
+                                <span style="font-size: 12px; font-weight: 800; ${txtColor}">${isDone ? hrs + 'h' : '-'}</span>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    }
+
     // Bind worker view hours modal trigger
     const btnViewHours = document.getElementById('btn-worker-view-hours');
     if (btnViewHours) {
