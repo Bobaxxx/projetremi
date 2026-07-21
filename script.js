@@ -5416,7 +5416,7 @@ function applyRolePermissions() {
             ? `<span style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 99px; background: #f1f5f9; color: #64748b;">Aucune heure</span>`
             : (isValidated 
                 ? `<span style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 99px; background: #dcfce7; color: #15803d; display: inline-flex; align-items: center; gap: 4px;">✓ Validées par le chef</span>`
-                : `<span style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 99px; background: #fff7ed; color: #c2410c; display: inline-flex; align-items: center; gap: 4px;">⏳ En attente de saisie</span>`
+                : `<span style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 99px; background: #fff7ed; color: #c2410c; display: inline-flex; align-items: center; gap: 4px;"><img src="sablier.svg" alt="Sablier" style="width: 14px; height: 14px; filter: brightness(0) saturate(100%) invert(32%) sepia(85%) saturate(2200%) hue-rotate(10deg) brightness(95%) contrast(98%);"> En attente de saisie</span>`
             );
 
         hoursPreviewContainer.innerHTML = `
