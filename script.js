@@ -6,6 +6,10 @@ const SUPABASE_ANON_KEY = "sb_publishable_9SaZgJq1R_Jo7uI3GjC0TA_9kSRZWn5"; // C
 
 let supabaseClient = null;
 let useSupabase = false;
+let isAdmin = true;
+let isChef = false;
+let isOuvrier = false;
+let currentUserProfile = null;
 
 if (SUPABASE_URL && SUPABASE_ANON_KEY && typeof window !== 'undefined' && window.supabase) {
     if (!SUPABASE_URL.startsWith('http://') && !SUPABASE_URL.startsWith('https://')) {
@@ -71,30 +75,48 @@ if (typeof window !== 'undefined') {
 
 // BTP Admin Scheduling System State
 let users = [
-    { id: 'u1', firstname: 'Jules', lastname: 'Marcon', role: 'Propriétaire', type: 'Employé', status: 'Actif', phone: '06 12 34 56 78' },
+    { id: '8e1eab40-a6b6-4f47-b33b-3f45e56f663b', firstname: 'Jules', lastname: 'Marcon', role: 'Propriétaire', type: 'Employé', status: 'Actif', phone: '06 12 34 56 78' },
     { id: 'u2', firstname: 'Marc', lastname: 'Lambert', role: 'Conducteur de travaux', type: 'Employé', status: 'Actif', phone: '06 98 76 54 32' },
-    { id: 'u3', firstname: 'Luc', lastname: 'Petit', role: 'Chef de chantier', type: 'Employé', status: 'Actif', phone: '06 45 89 23 11' },
-    { id: 'u4', firstname: 'Pierre', lastname: 'Dubois', role: 'Compagnon', type: 'Employé', status: 'Actif', phone: '06 77 12 99 88' },
+    { id: '6491e99c-2b99-4cd0-a771-fd57021a94ba', firstname: 'Luc', lastname: 'Petit', role: 'Chef de chantier', type: 'Employé', status: 'Actif', phone: '06 45 89 23 11' },
+    { id: 'cedbd55d-7fa3-47d9-8453-97cf81c4d756', firstname: 'Pierre', lastname: 'Dubois', role: 'Compagnon', type: 'Employé', status: 'Actif', phone: '06 77 12 99 88' },
     { id: 'u5', firstname: 'Thomas', lastname: 'Moreau', role: 'Compagnon', type: 'Employé', status: 'Actif', phone: '07 55 33 22 11' },
     { id: 'u6', firstname: 'Sarah', lastname: 'Diallo', role: 'Compagnon', type: 'Employé', status: 'Actif', phone: '06 88 44 22 99' },
     { id: 'u7', firstname: 'Michel', lastname: 'Giraud', role: 'Compagnon', type: 'Employé', status: 'Passif', phone: '06 11 00 22 33' }
 ];
 
+// Restore user images from localStorage (survives page refresh)
+(function() {
+    const savedImages = JSON.parse(localStorage.getItem('user_images') || '{}');
+    users.forEach(u => { if (savedImages[u.id]) u.image = savedImages[u.id]; });
+})();
+
+let entreprises = [];
+
 let chantiers = [
-    { id: 'c1', name: 'Exemple de chantier', client: 'Mon client préféré', address: '1 rue des chantiers 75005 Paris', status: 'Ouvert', budgetHours: 120, workedHours: 92.5 },
-    { id: 'c2', name: 'Rénovation Villa Cap d\'Antibes', client: 'M. Martin', address: 'Avenue des Fleurs 06600 Antibes', status: 'Ouvert', budgetHours: 350, workedHours: 112 },
-    { id: 'c3', name: 'Ravalement de façade Crèche Municipale', client: 'Mairie de Paris', address: '14 boulevard Saint-Germain 75006 Paris', status: 'Ouvert', budgetHours: 80, workedHours: 15 },
-    { id: 'c4', name: 'Extension Bureaux BTP', client: 'SCI Horizon', address: '45 rue de l\'Industrie 92100 Boulogne-Billancourt', status: 'Ouvert', budgetHours: 500, workedHours: 385 }
+    { id: 'c1', name: 'Exemple de chantier', client: 'Mon client préféré', entreprise: 'BTP Construction', address: '1 rue des chantiers 75005 Paris', status: 'Ouvert', budgetHours: 120, workedHours: 92.5 },
+    { id: 'c2', name: 'Rénovation Villa Cap d\'Antibes', client: 'M. Martin', entreprise: 'Rénov & Co', address: 'Avenue des Fleurs 06600 Antibes', status: 'Ouvert', budgetHours: 350, workedHours: 112 },
+    { id: 'c3', name: 'Ravalement de façade Crèche Municipale', client: 'Mairie de Paris', entreprise: 'BTP Construction', address: '14 boulevard Saint-Germain 75006 Paris', status: 'Ouvert', budgetHours: 80, workedHours: 15 },
+    { id: 'c4', name: 'Extension Bureaux BTP', client: 'SCI Horizon', entreprise: 'Métal Bat', address: '45 rue de l\'Industrie 92100 Boulogne-Billancourt', status: 'Ouvert', budgetHours: 500, workedHours: 385 }
 ];
+
+// Foreman delegations for worker interim
+let delegations = JSON.parse(localStorage.getItem('foreman_delegations')) || [];
+
+// Restore chantier images from localStorage (survives page refresh)
+(function() {
+    const savedImages = JSON.parse(localStorage.getItem('chantier_images') || '{}');
+    chantiers.forEach(ch => { if (savedImages[ch.id]) ch.image = savedImages[ch.id]; });
+})();
+
 
 // Planning allocations: { chantierId: { userId: [dayIndexes], hours: '08:00 - 17:00' } }
 let planningAllocations = {
     'c1': {
-        'u4': { days: [0, 1, 2], hours: '08:00 - 17:00' },
+        'cedbd55d-7fa3-47d9-8453-97cf81c4d756': { days: [0, 1, 2], hours: '08:00 - 17:00' },
         'u5': { days: [3, 4], hours: '08:00 - 17:00' }
     },
     'c2': {
-        'u3': { days: [0, 1, 2, 3, 4], hours: '07:30 - 16:30' },
+        '6491e99c-2b99-4cd0-a771-fd57021a94ba': { days: [0, 1, 2, 3, 4], hours: '07:30 - 16:30' },
         'u6': { days: [0, 1, 2], hours: '07:30 - 16:30' }
     },
     'c3': {
@@ -113,10 +135,10 @@ let collapsedProjects = {
 let currentPlanningPeriod = 'week'; // 'week', 'month', or 'quarter'
 let currentPlanningView = 'chantiers'; // 'chantiers' or 'users'
 let collapsedUsers = {
-    'u1': true,
+    '8e1eab40-a6b6-4f47-b33b-3f45e56f663b': true,
     'u2': true,
-    'u3': false,
-    'u4': false,
+    '6491e99c-2b99-4cd0-a771-fd57021a94ba': false,
+    'cedbd55d-7fa3-47d9-8453-97cf81c4d756': false,
     'u5': false,
     'u6': false,
     'u7': true
@@ -129,11 +151,11 @@ let hoursSelectFilterVal = 'all';
 let hoursStatusFilterVal = 'all';
 let hoursAllocations = {
     'c1': {
-        'u4': { 0: '08:00', 1: '00:00', 2: '00:00', 3: '09:00', 4: '00:00' },
+        'cedbd55d-7fa3-47d9-8453-97cf81c4d756': { 0: '08:00', 1: '00:00', 2: '00:00', 3: '09:00', 4: '00:00' },
         'u5': { 0: '00:00', 1: '06:00', 2: '00:00', 3: '03:00', 4: '00:00' }
     },
     'c2': {
-        'u3': { 0: '08:00', 1: '08:00', 2: '08:00', 3: '08:00', 4: '08:00' },
+        '6491e99c-2b99-4cd0-a771-fd57021a94ba': { 0: '08:00', 1: '08:00', 2: '08:00', 3: '08:00', 4: '08:00' },
         'u6': { 0: '08:00', 1: '08:00', 2: '08:00', 3: '00:00', 4: '00:00' }
     }
 };
@@ -202,15 +224,45 @@ let activities = [
     { text: 'Pierre Dubois a été affecté au chantier "Exemple de chantier"', time: 'Hier' }
 ];
 
+// Helper: returns HTML for a chantier avatar (image if available, initials fallback)
+function getChantierAvatar(ch, size = 36, extraStyle = '') {
+    const initials = ch.name.split(' ').map(w => w.charAt(0)).join('').substring(0, 2).toUpperCase();
+    if (ch.image) {
+        return `<img src="${ch.image}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;flex-shrink:0;${extraStyle}" alt="${ch.name}">`;
+    }
+    return `<div class="initials-bubble bubble-blue" style="width:${size}px;height:${size}px;font-size:${Math.round(size * 0.3)}px;line-height:${size}px;${extraStyle}">${initials}</div>`;
+}
+
+// Helper: returns HTML for a user avatar (image if available, initials fallback)
+function getUserAvatar(u, size = 36, extraStyle = '') {
+    const initials = `${u.firstname.charAt(0)}${u.lastname.charAt(0)}`.toUpperCase();
+    if (u.image) {
+        return `<img src="${u.image}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;flex-shrink:0;${extraStyle}" alt="${u.firstname} ${u.lastname}">`;
+    }
+    return `<div class="initials-bubble bubble-violet" style="width:${size}px;height:${size}px;font-size:${Math.round(size * 0.3)}px;line-height:${size}px;${extraStyle}">${initials}</div>`;
+}
+
 // Async database loader from Supabase
 async function loadDataFromSupabase() {
     if (!useSupabase) return;
 
     try {
+        // 0. Fetch Entreprises
+        const { data: entDb, error: entErr } = await supabaseClient.from('entreprises').select('*').order('name', { ascending: true });
+        if (!entErr && entDb) {
+            entreprises = entDb;
+            populateEntreprisesSelects();
+        }
+
         // 1. Fetch Users
         const { data: usersDb, error: usersErr } = await supabaseClient.from('utilisateurs').select('*').order('lastname', { ascending: true });
         if (!usersErr && usersDb) {
             users = usersDb;
+            // Restore user images from localStorage (persisted separately)
+            const savedImages = JSON.parse(localStorage.getItem('user_images') || '{}');
+            users.forEach(u => {
+                if (savedImages[u.id]) u.image = savedImages[u.id];
+            });
         }
 
         // 2. Fetch Chantiers
@@ -220,12 +272,19 @@ async function loadDataFromSupabase() {
                 id: c.id,
                 name: c.name,
                 client: c.client,
+                entreprise: c.entreprise,
                 address: c.address,
                 status: c.status,
                 budgetHours: parseFloat(c.budget_hours) || 0,
                 workedHours: parseFloat(c.worked_hours) || 0,
                 color: c.color
             }));
+
+            // Restore images from localStorage (persisted separately)
+            const savedImages = JSON.parse(localStorage.getItem('chantier_images') || '{}');
+            chantiers.forEach(ch => {
+                if (savedImages[ch.id]) ch.image = savedImages[ch.id];
+            });
         }
 
         // 3. Fetch Planning Allocations and their Days
@@ -331,8 +390,8 @@ async function loadDataFromSupabase() {
         }
 
     } catch (e) {
-        console.error("Erreur de chargement des données depuis Supabase :", e);
-        alert("Erreur critique de chargement Supabase : " + e.message);
+        console.warn("Erreur de chargement des données depuis Supabase (le projet est probablement en pause). Repli sur les données locales :", e);
+        useSupabase = false;
     }
 }
 
@@ -362,51 +421,182 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Dynamic User Profile Info & Logout handler
-    if (useSupabase && supabaseClient) {
+    currentUserProfile = null;
+    isChef = false;
+    isOuvrier = false;
+    isAdmin = true;
+
+    const handleLogout = async () => {
+        if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
+            if (useSupabase && supabaseClient) {
+                await supabaseClient.auth.signOut();
+            }
+            window.location.replace('login.html');
+        }
+    };
+
+    // Check URL parameters for easy testing/debug (ex: ?role=chef or ?role=ouvrier)
+    const urlParams = new URLSearchParams(window.location.search);
+    const debugRole = urlParams.get('role');
+
+    if (debugRole) {
+        await loadDataFromSupabase();
+        isAdmin = false;
+        if (debugRole === 'chef') {
+            isChef = true;
+            currentUserProfile = users.find(u => (u.role || '').toLowerCase().includes('chef')) || users[2]; // Luc Petit
+        } else {
+            isOuvrier = true;
+            currentUserProfile = users.find(u => (u.role || '').toLowerCase().includes('maçon') || (u.role || '').toLowerCase().includes('compagnon')) || users[3]; // Pierre Dubois
+        }
+    } else if (useSupabase && supabaseClient) {
         const { data: { user } } = await supabaseClient.auth.getUser();
         if (user) {
+            // Format email prefix as name if no metadata, or extract metadata
+            const name = user.user_metadata?.full_name || user.email.split('@')[0];
+            const formattedName = name.split(/[\._]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+            // Load dynamic data first to find the user in DB
+            await loadDataFromSupabase();
+
+            // Find matching user in the database
+            currentUserProfile = users.find(u => u.id === user.id);
+            if (!currentUserProfile) {
+                // Try fallback matching by name
+                currentUserProfile = users.find(u => {
+                    const dbName = `${u.firstname} ${u.lastname}`.toLowerCase();
+                    return dbName.includes(formattedName.toLowerCase()) || formattedName.toLowerCase().includes(dbName);
+                });
+            }
+
+            if (currentUserProfile) {
+                const roleLower = (currentUserProfile.role || '').toLowerCase();
+                const typeLower = (currentUserProfile.type || '').toLowerCase();
+                
+                if (roleLower.includes('chef') || typeLower.includes('chef') || roleLower.includes('conducteur')) {
+                    isChef = true;
+                    isAdmin = false;
+                } else if (roleLower.includes('admin') || roleLower.includes('propri') || roleLower.includes('proprio') || typeLower.includes('admin')) {
+                    isAdmin = true;
+                    isChef = false;
+                    isOuvrier = false;
+                } else {
+                    isOuvrier = true;
+                    isAdmin = false;
+                    isChef = false;
+                }
+            }
+
+            // Force Admin override if email contains "admin" (e.g. admin@test.com)
+            const emailLower = (user.email || '').toLowerCase();
+            if (emailLower.includes('admin')) {
+                isAdmin = true;
+                isChef = false;
+                isOuvrier = false;
+            }
+
             // Update profile info in sidebar
             const profileName = document.getElementById('profile-name');
             const profileRole = document.getElementById('profile-role');
             const welcomeText = document.querySelector('.welcome-text');
             const avatar = document.querySelector('.sidebar-footer .avatar');
 
-            // Format email prefix as name if no metadata, or extract metadata
-            const name = user.user_metadata?.full_name || user.email.split('@')[0];
-            const formattedName = name.split(/[\._]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+            const displayName = currentUserProfile ? `${currentUserProfile.firstname} ${currentUserProfile.lastname}` : formattedName;
 
-            if (profileName) profileName.textContent = formattedName;
-            if (profileRole) profileRole.textContent = 'Membre équipe';
-            if (welcomeText) welcomeText.textContent = `Bonjour, ${formattedName}`;
+            if (profileName) profileName.textContent = displayName;
+            if (profileRole) profileRole.textContent = currentUserProfile ? currentUserProfile.role : 'Membre équipe';
+            if (welcomeText) welcomeText.textContent = `Bonjour, ${displayName}`;
             if (avatar) {
-                avatar.textContent = formattedName.charAt(0).toUpperCase();
+                avatar.textContent = displayName.charAt(0).toUpperCase();
             }
         }
 
-        // Logout logic
-        const logoutDesktop = document.getElementById('btn-logout-desktop');
-        const logoutMobile = document.getElementById('btn-logout-mobile');
-
-        const handleLogout = async () => {
-            if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
-                await supabaseClient.auth.signOut();
-                window.location.replace('login.html');
-            }
-        };
-
-        if (logoutDesktop) logoutDesktop.addEventListener('click', handleLogout);
-        if (logoutMobile) logoutMobile.addEventListener('click', handleLogout);
     }
 
-    // Load dynamic data if connected to Supabase
-    await loadDataFromSupabase();
+    // Global Logout and Interaction bindings
+    const logoutDesktop = document.getElementById('btn-logout-desktop');
+    const logoutMobile = document.getElementById('btn-logout-mobile');
+    const logoutMobileView = document.getElementById('mobile-logout-btn');
+    const mobileHamburger = document.querySelector('#mobile-app-container .hamburger-btn');
 
-    // Initial renders
+    if (logoutDesktop) logoutDesktop.addEventListener('click', handleLogout);
+    if (logoutMobile) logoutMobile.addEventListener('click', handleLogout);
+    if (logoutMobileView) logoutMobileView.addEventListener('click', handleLogout);
+    
+    // Left side drawer open/close handlers
+    const closeMobileDrawer = () => {
+        const drawer = document.getElementById('mobile-side-drawer');
+        const overlay = document.getElementById('mobile-drawer-overlay');
+        if (drawer && overlay) {
+            drawer.style.transform = 'translateX(-100%)';
+            overlay.style.opacity = '0';
+            setTimeout(() => { overlay.style.display = 'none'; }, 300);
+        }
+    };
+
+    if (mobileHamburger) {
+        mobileHamburger.addEventListener('click', () => {
+            const drawer = document.getElementById('mobile-side-drawer');
+            const overlay = document.getElementById('mobile-drawer-overlay');
+            if (drawer && overlay) {
+                // Set drawer user details
+                const name = currentUserProfile ? `${currentUserProfile.firstname} ${currentUserProfile.lastname}` : 'Utilisateur';
+                const roleName = currentUserProfile ? currentUserProfile.role : (isChef ? 'Chef de chantier' : 'Ouvrier');
+                
+                const drAvatar = document.getElementById('mobile-drawer-avatar');
+                const drUsername = document.getElementById('mobile-drawer-username');
+                const drUserrole = document.getElementById('mobile-drawer-userrole');
+                
+                if (drAvatar) drAvatar.textContent = name.charAt(0).toUpperCase();
+                if (drUsername) drUsername.textContent = name;
+                if (drUserrole) drUserrole.textContent = roleName;
+
+                drawer.style.transform = 'translateX(0)';
+                overlay.style.display = 'block';
+                overlay.style.opacity = '1';
+            }
+        });
+    }
+
+    const btnCloseDrawer = document.getElementById('btn-close-mobile-drawer');
+    const drawerOverlay = document.getElementById('mobile-drawer-overlay');
+    const drawerLogout = document.getElementById('mobile-drawer-logout-btn');
+
+    if (btnCloseDrawer) btnCloseDrawer.addEventListener('click', closeMobileDrawer);
+    if (drawerOverlay) drawerOverlay.addEventListener('click', closeMobileDrawer);
+    if (drawerLogout) drawerLogout.addEventListener('click', handleLogout);
+
+    // Scroll to section when clicking drawer links
+    const drawerItems = document.querySelectorAll('.drawer-nav-item');
+    drawerItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const targetId = item.getAttribute('data-target');
+            const targetEl = document.getElementById(targetId);
+            closeMobileDrawer();
+            if (targetEl) {
+                targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+    });
+
+    // Apply Role-based Tab & Button Permissions
+    checkDelegationRole();
+    applyRolePermissions();
+
+    // Standard renders (will respect isAdmin constraints)
     renderDashboard();
     renderUsers();
     renderChantiers();
     renderPlanning();
     renderHours();
+    renderDelegations();
+    initDelegationFeatures();
+    initDiffusionFeatures();
+
+    // Init onboarding flow if required (online version checks DB directly)
+    if (useSupabase && supabaseClient && isAdmin) {
+        initOnboarding();
+    }
 });
 
 // Clock update logic
@@ -641,6 +831,15 @@ function initTabs() {
 }
 
 function switchTab(tabId) {
+    if (!isAdmin) {
+        const forbiddenTabs = isOuvrier 
+            ? ['users', 'settings', 'user-detail'] 
+            : ['users', 'user-detail'];
+        if (forbiddenTabs.includes(tabId)) {
+            tabId = 'dashboard';
+        }
+    }
+
     // Deactivate previous active tabs
     document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(section => section.classList.remove('active'));
@@ -758,14 +957,13 @@ function renderUsers(filterQuery = '') {
     });
 
     tbody.innerHTML = filteredUsers.map(u => {
-        const initials = `${u.firstname.charAt(0)}${u.lastname.charAt(0)}`.toUpperCase();
         const statusClass = u.status === 'Actif' ? 'status-active' : 'status-passive';
 
         return `
             <tr>
                 <td>
                     <div class="user-cell" style="cursor: pointer;" onclick="openUserDetail('${u.id}')">
-                        <div class="initials-bubble bubble-violet">${initials}</div>
+                        ${getUserAvatar(u, 36)}
                         <span class="user-name-title" style="color: var(--primary); text-decoration: underline;">${u.firstname} ${u.lastname}</span>
                     </div>
                 </td>
@@ -830,7 +1028,34 @@ function openEditUserModal(e, userId) {
         });
     }
 
-    document.getElementById('edit-user-modal').classList.add('show');
+    const modal = document.getElementById('edit-user-modal');
+    if (modal) {
+        // Pre-display existing user image in the uploader
+        const uploader = modal.querySelector('.image-uploader');
+        if (uploader) {
+            // Reset first
+            const oldPreview = uploader.querySelector('.uploader-preview-img');
+            if (oldPreview) oldPreview.remove();
+            uploader.querySelectorAll(':not(.image-uploader-input)').forEach(child => {
+                child.style.opacity = '';
+            });
+            uploader.removeAttribute('data-image-base64');
+
+            if (u.image) {
+                uploader.setAttribute('data-image-base64', u.image);
+                const previewImg = document.createElement('img');
+                previewImg.className = 'uploader-preview-img';
+                previewImg.src = u.image;
+                previewImg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;border-radius:8px;';
+                uploader.style.position = 'relative';
+                uploader.appendChild(previewImg);
+                uploader.querySelectorAll(':not(.uploader-preview-img):not(.image-uploader-input)').forEach(child => {
+                    child.style.opacity = '0';
+                });
+            }
+        }
+        modal.classList.add('show');
+    }
 }
 
 // Render user detail page
@@ -842,9 +1067,8 @@ function renderUserDetail() {
         return;
     }
 
-    const initials = `${u.firstname.charAt(0)}${u.lastname.charAt(0)}`.toUpperCase();
+    const avatarColor = u.color || '#6050f3';
     const statusClass = u.status === 'Actif' ? 'status-active' : 'status-passive';
-    const avatarColor = u.color || 'var(--accent)';
 
     // Count assigned chantiers
     const assignedChantiers = chantiers.filter(ch => {
@@ -856,12 +1080,12 @@ function renderUserDetail() {
     const headerEl = document.getElementById('user-detail-header');
     headerEl.innerHTML = `
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
-            <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="display: flex; align-items: center; gap: 16px;">
                 <button onclick="switchTab('users')" style="background: none; border: none; cursor: pointer; color: var(--gray-muted); font-size: 13px; display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='var(--bg-primary)'" onmouseout="this.style.background='none'">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
                     Retour
                 </button>
-                <div style="width: 48px; height: 48px; border-radius: 50%; background-color: ${avatarColor}; display: flex; align-items: center; justify-content: center; font-family: var(--font-heading); font-weight: 700; font-size: 18px; color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">${initials}</div>
+                ${getUserAvatar(u, 48, `background-color: ${avatarColor}; font-family: var(--font-heading); font-weight: 700; color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15);`)}
                 <div>
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <h2 style="font-family: var(--font-heading); font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 0;">${u.firstname} ${u.lastname}</h2>
@@ -977,32 +1201,34 @@ function renderChantiers(filterQuery = '') {
     const filteredChantiers = chantiers.filter(c => {
         return c.name.toLowerCase().includes(query) ||
             c.client.toLowerCase().includes(query) ||
+            (c.entreprise && c.entreprise.toLowerCase().includes(query)) ||
             c.address.toLowerCase().includes(query);
     });
 
     tbody.innerHTML = filteredChantiers.map(c => {
-        const initials = c.name.split(' ').map(w => w.charAt(0)).join('').substring(0, 2).toUpperCase();
-
         return `
             <tr>
                 <td>
                     <div class="user-cell" style="cursor: pointer;" onclick="openChantierDetail('${c.id}')">
-                        <div class="initials-bubble bubble-blue">${initials}</div>
+                        ${getChantierAvatar(c, 36)}
                         <span class="user-name-title" style="color: var(--primary); text-decoration: underline;">${c.name}</span>
                     </div>
                 </td>
                 <td>${c.client}</td>
+                <td><span class="badge badge-gray">${c.entreprise || 'Non renseigné'}</span></td>
                 <td>${c.address}</td>
                 <td><span class="status-pill status-active">${c.status}</span></td>
                 <td><strong>${c.workedHours}h</strong> / ${c.budgetHours}h</td>
                 <td>
                     <div class="cell-actions">
+                        ${isAdmin ? `
                         <button class="btn-action" title="Supprimer" onclick="deleteChantier('${c.id}')">
                             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="3 6 5 6 21 6"/>
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                             </svg>
                         </button>
+                        ` : ''}
                     </div>
                 </td>
             </tr>
@@ -1072,7 +1298,7 @@ function renderPlanning() {
     });
 
     // Filter users based on status selection (in users mode)
-    const filteredUsers = users.filter(user => {
+    let filteredUsers = users.filter(user => {
         if (currentPlanningView === 'users' && planningStatusFilterVal !== 'all') {
             const assignedDays = new Set();
             chantiers.forEach(ch => {
@@ -1094,6 +1320,10 @@ function renderPlanning() {
         }
         return true;
     });
+
+    if (isOuvrier) {
+        filteredUsers = filteredUsers.filter(user => user.id === currentUserProfile.id);
+    }
 
     const txtToggleAll = document.getElementById('txt-toggle-all');
 
@@ -1193,7 +1423,7 @@ function renderPlanning() {
     if (currentPlanningView === 'chantiers') {
         filteredChantiers.forEach(ch => {
             const isCollapsed = collapsedProjects[ch.id] || false;
-            const initials = ch.name.split(' ').map(w => w.charAt(0)).join('').substring(0, 2).toUpperCase();
+            // initials handled by getChantierAvatar
 
             const projectRow = document.createElement('tr');
             projectRow.className = `project-row ${isCollapsed ? 'collapsed' : ''}`;
@@ -1226,12 +1456,14 @@ function renderPlanning() {
                             <svg class="toggle-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="9 18 15 12 9 6"/>
                             </svg>
-                            <div class="initials-bubble bubble-blue avatar-sm">${initials}</div>
+                            ${getChantierAvatar(ch, 28)}
                             <span style="font-size: 13px;">${ch.name}</span>
                         </div>
+                        ${isAdmin ? `
                         <button class="project-add-companion-btn" onclick="openAssignModal(event, '${ch.id}')" title="Affecter un compagnon">
                             +
                         </button>
+                        ` : ''}
                     </div>
                 </td>
                 ${parentDaysHtml}
@@ -1276,7 +1508,7 @@ function renderPlanning() {
                         <td class="col-project-info tree-connector-cell">
                             <div class="companion-info-cell">
                                 <div class="companion-left">
-                                    <div class="initials-bubble bubble-violet">${initialsUser}</div>
+                                    ${getUserAvatar(user, 36)}
                                     <div class="user-info">
                                         <span class="companion-name">${user.firstname} ${user.lastname}</span>
                                         <span class="companion-role">${user.role}</span>
@@ -1309,7 +1541,7 @@ function renderPlanning() {
                                         `}
                                     </div>
                                 ` : `
-                                    <button class="planning-add-btn" onclick="openAssignModal(event, '${ch.id}', '${userId}')">+</button>
+                                    ${isAdmin ? `<button class="planning-add-btn" onclick="openAssignModal(event, '${ch.id}', '${userId}')">+</button>` : ''}
                                 `}
                             </td>
                         `;
@@ -1369,7 +1601,7 @@ function renderPlanning() {
                                 <svg class="toggle-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                                     <polyline points="9 18 15 12 9 6"/>
                                 </svg>
-                                <div class="initials-bubble bubble-violet">${initialsUser}</div>
+                                ${getUserAvatar(user, 28)}
                                 <span style="font-size: 13px;">${user.firstname} ${user.lastname}</span>
                             </div>
                         </div>
@@ -1390,7 +1622,7 @@ function renderPlanning() {
                     <td class="col-project-info">
                         <div class="project-cell-name">
                             <div class="project-title-left" style="padding-left: 20px;">
-                                <div class="initials-bubble bubble-violet">${initialsUser}</div>
+                                ${getUserAvatar(user, 28)}
                                 <span style="font-size: 13px;">${user.firstname} ${user.lastname}</span>
                             </div>
                         </div>
@@ -1404,8 +1636,6 @@ function renderPlanning() {
 
             if (hasAssignments && !isCollapsed) {
                 userAllocations.forEach(({ chantier, alloc }) => {
-                    const initialsChantier = chantier.name.split(' ').map(w => w.charAt(0)).join('').substring(0, 2).toUpperCase();
-
                     const compRow = document.createElement('tr');
                     compRow.className = 'companion-row';
 
@@ -1413,7 +1643,7 @@ function renderPlanning() {
                         <td class="col-project-info tree-connector-cell">
                             <div class="companion-info-cell">
                                 <div class="companion-left">
-                                    <div class="initials-bubble bubble-blue">${initialsChantier}</div>
+                                    ${getChantierAvatar(chantier, 36)}
                                     <div class="user-info">
                                         <span class="companion-name">${chantier.name}</span>
                                         <span class="companion-role">Chantier</span>
@@ -1446,7 +1676,7 @@ function renderPlanning() {
                                         `}
                                     </div>
                                 ` : `
-                                    <button class="planning-add-btn" onclick="openAssignModal(event, '${chantier.id}', '${user.id}')">+</button>
+                                    ${isAdmin ? `<button class="planning-add-btn" onclick="openAssignModal(event, '${chantier.id}', '${user.id}')">+</button>` : ''}
                                 `}
                             </td>
                         `;
@@ -1456,6 +1686,163 @@ function renderPlanning() {
                     tbody.appendChild(compRow);
                 });
             }
+        });
+    }
+
+    // Render Mobile List View
+    const mobileListView = document.getElementById('mobile-planning-list-view');
+    if (mobileListView) {
+        let mobileHtml = '';
+        
+        // Find Monday date of active week
+        const currentDay = currentPlanningDate.getDay();
+        const distanceToMon = currentDay === 0 ? -6 : 1 - currentDay;
+        const monday = new Date(currentPlanningDate);
+        monday.setDate(currentPlanningDate.getDate() + distanceToMon);
+
+        const daysOfWeek = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi'];
+
+        daysOfWeek.forEach((dayName, dIdx) => {
+            const currentDayDate = new Date(monday);
+            currentDayDate.setDate(monday.getDate() + dIdx);
+            const dayNumStr = String(currentDayDate.getDate()).padStart(2, '0');
+            const dayLabel = `${dayName} ${dayNumStr}`;
+
+            mobileHtml += `<div class="mobile-planning-day-header">${dayLabel}</div>`;
+
+            let dayAllocs = [];
+
+            if (currentPlanningView === 'users') {
+                // Show assignments of the active filtered users
+                filteredUsers.forEach(user => {
+                    chantiers.forEach(ch => {
+                        const projectAllocations = planningAllocations[ch.id] || {};
+                        const alloc = projectAllocations[user.id];
+                        if (alloc && alloc.days.includes(dIdx)) {
+                            dayAllocs.push({
+                                id: ch.id,
+                                title: ch.name,
+                                subtitle: `${user.firstname} ${user.lastname}`,
+                                hours: alloc.hours || '08:00 - 17:00',
+                                color: ch.color || '#3b82f6',
+                                initials: ch.name.split(' ').map(w => w.charAt(0)).join('').substring(0, 2).toUpperCase()
+                            });
+                        }
+                    });
+                });
+            } else {
+                // Planning Général: show chantiers and who is on them
+                filteredChantiers.forEach(ch => {
+                    const projectAllocations = planningAllocations[ch.id] || {};
+                    const isCollapsed = collapsedProjects[ch.id] || false;
+                    
+                    const companionsOnDay = [];
+                    for (const uId in projectAllocations) {
+                        if (projectAllocations[uId].days.includes(dIdx)) {
+                            const u = users.find(usr => usr.id === uId);
+                            if (u) {
+                                companionsOnDay.push({
+                                    user: u,
+                                    hours: projectAllocations[uId].hours || '08:00 - 17:00'
+                                });
+                            }
+                        }
+                    }
+
+                    if (companionsOnDay.length > 0) {
+                        dayAllocs.push({
+                            id: ch.id,
+                            title: ch.name,
+                            companionsCount: companionsOnDay.length,
+                            companions: companionsOnDay,
+                            isCollapsed: isCollapsed,
+                            color: ch.color || '#3b82f6',
+                            initials: ch.name.split(' ').map(w => w.charAt(0)).join('').substring(0, 2).toUpperCase()
+                        });
+                    }
+                });
+            }
+
+            if (dayAllocs.length === 0) {
+                mobileHtml += `
+                    <div class="mobile-planning-card" style="justify-content: center; color: #94a3b8; font-style: italic; font-size: 12px; background: white;">
+                        Aucun chantier prévu
+                    </div>
+                `;
+            } else {
+                dayAllocs.forEach(alloc => {
+                    if (currentPlanningView === 'users') {
+                        mobileHtml += `
+                            <div class="mobile-planning-card" style="background: white;">
+                                <div class="mobile-planning-card-left">
+                                    <div class="initials-bubble" style="background-color: ${alloc.color}; width: 32px; height: 32px; font-size: 11px; line-height: 32px; margin: 0; color: white;">
+                                        ${alloc.initials}
+                                    </div>
+                                    <div style="display: flex; flex-direction: column;">
+                                        <span class="mobile-planning-card-title">${alloc.title}</span>
+                                        <span style="font-size: 11px; color: #64748b; margin-top: 2px;">${alloc.subtitle}</span>
+                                    </div>
+                                </div>
+                                <span class="mobile-planning-card-hours" style="color: var(--primary);">${alloc.hours}</span>
+                            </div>
+                        `;
+                    } else {
+                        // General Planning: Collapsible Project Row
+                        const arrowSvg = `
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" style="transform: ${alloc.isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)'}; transition: transform 0.2s; margin-left: 6px; display: inline-block; vertical-align: middle;">
+                                <polyline points="6 9 12 15 18 9"/>
+                            </svg>
+                        `;
+                        
+                        mobileHtml += `
+                            <div class="mobile-planning-card project-toggle-card" data-project-id="${alloc.id}" style="background: white; cursor: pointer;">
+                                <div class="mobile-planning-card-left">
+                                    <div class="initials-bubble" style="background-color: ${alloc.color}; width: 32px; height: 32px; font-size: 11px; line-height: 32px; margin: 0; color: white;">
+                                        ${alloc.initials}
+                                    </div>
+                                    <div style="display: flex; flex-direction: column;">
+                                        <span class="mobile-planning-card-title">${alloc.title}</span>
+                                        <span style="font-size: 11px; color: var(--accent); font-weight: 700; margin-top: 2px; display: flex; align-items: center; gap: 4px;">
+                                            ${alloc.companionsCount} compagnon(s) ${arrowSvg}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+
+                        if (!alloc.isCollapsed) {
+                            alloc.companions.forEach(comp => {
+                                const initialsComp = `${comp.user.firstname.charAt(0)}${comp.user.lastname.charAt(0)}`.toUpperCase();
+                                mobileHtml += `
+                                    <div class="mobile-planning-card" style="background: #f8fafc; padding-left: 36px; border-left: 4px solid var(--accent);">
+                                        <div class="mobile-planning-card-left">
+                                            <div class="initials-bubble bubble-violet" style="width: 28px; height: 28px; font-size: 10px; line-height: 28px; margin: 0;">
+                                                ${initialsComp}
+                                            </div>
+                                            <div style="display: flex; flex-direction: column;">
+                                                <span style="font-size: 13px; font-weight: 700; color: #334155;">${comp.user.firstname} ${comp.user.lastname}</span>
+                                                <span style="font-size: 11px; color: #64748b;">${comp.user.role}</span>
+                                            </div>
+                                        </div>
+                                        <span class="mobile-planning-card-hours" style="font-size: 13px; color: #334155;">${comp.hours}</span>
+                                    </div>
+                                `;
+                            });
+                        }
+                    }
+                });
+            }
+        });
+
+        mobileListView.innerHTML = mobileHtml;
+
+        // Bind click events for mobile project toggles
+        mobileListView.querySelectorAll('.project-toggle-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const projectId = card.getAttribute('data-project-id');
+                collapsedProjects[projectId] = !collapsedProjects[projectId];
+                renderPlanning();
+            });
         });
     }
 }
@@ -1669,6 +2056,12 @@ function initModals() {
                 const type = document.getElementById('edit-user-type').value;
                 const color = document.getElementById('edit-user-color-input').value;
 
+                let imgData = null;
+                const editUploader = document.querySelector('#edit-user-modal .image-uploader');
+                if (editUploader) {
+                    imgData = editUploader.getAttribute('data-image-base64');
+                }
+
                 if (useSupabase) {
                     try {
                         const { error } = await supabaseClient.from('utilisateurs').update({ firstname, lastname, phone, role, type, color }).eq('id', userId);
@@ -1684,6 +2077,14 @@ function initModals() {
                     if (idx !== -1) {
                         users[idx] = { ...users[idx], firstname, lastname, phone, code, role, type, color };
                     }
+                }
+
+                if (imgData) {
+                    const idx = users.findIndex(u => u.id === userId);
+                    if (idx !== -1) users[idx].image = imgData;
+                    const savedImages = JSON.parse(localStorage.getItem('user_images') || '{}');
+                    savedImages[userId] = imgData;
+                    localStorage.setItem('user_images', JSON.stringify(savedImages));
                 }
 
                 editUserModal.classList.remove('show');
@@ -1710,6 +2111,7 @@ function initModals() {
 }
 
 function openEditAssignModal(e, chantierId, userId, dateLabel) {
+    if (!isAdmin) return;
     if (e && e.stopPropagation) e.stopPropagation();
     
     const chantier = chantiers.find(c => c.id === chantierId);
@@ -1814,6 +2216,7 @@ async function deleteEditAssignment() {
 
 // Open Assign Companion Modal
 function openAssignModal(e, chantierId, userId) {
+    if (!isAdmin) return;
     if (e && e.stopPropagation) e.stopPropagation(); // prevent collapsing project row
     const modal = document.getElementById('assign-modal');
     document.getElementById('assign-chantier-id').value = chantierId;
@@ -1854,6 +2257,13 @@ function initForms() {
             code
         };
 
+        let imgData = null;
+        const addUploader = document.querySelector('#user-modal .image-uploader');
+        if (addUploader) {
+            imgData = addUploader.getAttribute('data-image-base64');
+            if (imgData) newUser.image = imgData;
+        }
+
         if (useSupabase) {
             try {
                 // Try inserting with all fields (color, code, etc.)
@@ -1883,7 +2293,20 @@ function initForms() {
             });
         }
 
+        if (imgData) {
+            const savedImages = JSON.parse(localStorage.getItem('user_images') || '{}');
+            savedImages[newUser.id] = imgData;
+            localStorage.setItem('user_images', JSON.stringify(savedImages));
+        }
+
         userForm.reset();
+        if (addUploader) {
+            addUploader.removeAttribute('data-image-base64');
+            const oldPreview = addUploader.querySelector('.uploader-preview-img');
+            if (oldPreview) oldPreview.remove();
+            addUploader.querySelectorAll(':not(.image-uploader-input)').forEach(child => child.style.opacity = '');
+        }
+
         // Reset color picker selection
         const addColorDots = document.querySelectorAll('#add-user-color-picker .picker-dot');
         addColorDots.forEach(d => d.classList.remove('selected'));
@@ -1923,6 +2346,7 @@ function initForms() {
         e.preventDefault();
         const name = document.getElementById('chantier-name').value.trim();
         const client = document.getElementById('chantier-client').value.trim();
+        const entreprise = document.getElementById('chantier-entreprise') ? document.getElementById('chantier-entreprise').value.trim() : '';
 
         // Construct full address from components
         const addr = document.getElementById('chantier-address').value.trim();
@@ -1938,6 +2362,7 @@ function initForms() {
             id: 'c_' + Date.now(),
             name,
             client,
+            entreprise,
             address: fullAddress || 'Adresse non renseignée',
             status,
             budgetHours,
@@ -1950,6 +2375,7 @@ function initForms() {
                 id: newCh.id,
                 name: newCh.name,
                 client: newCh.client,
+                entreprise: newCh.entreprise,
                 address: newCh.address,
                 status: newCh.status,
                 budget_hours: newCh.budgetHours,
@@ -2477,6 +2903,7 @@ function decimalToTimeString(decimal) {
 
 function sanitizeHourInput(val) {
     val = val.trim().replace('h', ':').replace('H', ':');
+    if (val.toLowerCase() === 'à compléter' || val.toLowerCase() === 'a completer' || val === '') return 'À compléter';
     if (!val || val === '0' || val === '00') return '00:00';
     if (val.includes(':')) {
         const parts = val.split(':');
@@ -2659,7 +3086,14 @@ function renderHoursRows() {
             }
 
             const pAllocs = hoursAllocations[ch.id] || {};
-            const assignedUserIds = Object.keys(pAllocs);
+            let assignedUserIds = Object.keys(pAllocs);
+            if (isOuvrier) {
+                const hasDelegation = hasEditPermissionForChantier(ch.id);
+                if (!hasDelegation) {
+                    assignedUserIds = assignedUserIds.filter(uId => uId === currentUserProfile.id);
+                }
+            }
+            if (assignedUserIds.length === 0) return;
 
             let projectGroupTotal = 0;
             assignedUserIds.forEach(uId => {
@@ -2668,15 +3102,13 @@ function renderHoursRows() {
                 }
             });
 
-            const projectInitials = ch.name.split(' ').map(w => w.charAt(0)).join('').substring(0, 2).toUpperCase();
-
             // Project Row Header
             const trProj = document.createElement('tr');
             trProj.className = 'project-row';
             trProj.innerHTML = `
                 <td class="col-project-info" style="font-weight: 700;">
                     <div style="display: flex; align-items: center; gap: 10px; padding-left: 4px;">
-                        <div class="initials-bubble bubble-blue" style="width: 28px; height: 28px; font-size: 10px; line-height: 28px;">${projectInitials}</div>
+                        ${getChantierAvatar(ch, 28)}
                         <span>${ch.name}</span>
                     </div>
                 </td>
@@ -2701,7 +3133,7 @@ function renderHoursRows() {
                     <td class="col-project-info tree-connector-cell">
                         <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                <div class="initials-bubble bubble-violet">${userInitials}</div>
+                                ${getUserAvatar(user, 36)}
                                 <div class="user-info">
                                     <span class="companion-name">${user.firstname} ${user.lastname}</span>
                                     <span class="companion-role">${user.role}</span>
@@ -2720,12 +3152,13 @@ function renderHoursRows() {
                     dailyTotals[d] += decVal;
 
                     const isToComplete = val === 'À compléter';
-                    daysHtml += `
-                        <td>
-                            <input type="text" class="hour-cell-input ${isToComplete ? 'input-to-complete' : ''}" value="${val}" 
-                                   data-chantier-id="${ch.id}" data-user-id="${uId}" data-day="${d}">
-                        </td>
+                    const inputHtml = hasEditPermissionForChantier(ch.id) ? `
+                        <input type="text" class="hour-cell-input ${isToComplete ? 'input-to-complete' : ''}" value="${val}" 
+                               data-chantier-id="${ch.id}" data-user-id="${uId}" data-day="${d}">
+                    ` : `
+                        <span class="hour-cell-value ${isToComplete ? 'text-to-complete' : ''}">${val}</span>
                     `;
+                    daysHtml += `<td>${inputHtml}</td>`;
                 }
 
                 grandTotal += userRowTotal;
@@ -2741,6 +3174,15 @@ function renderHoursRows() {
     } else {
         // Mode 2: Utilisateurs
         const filteredHoursUsers = users.filter(u => {
+            if (isOuvrier) {
+                const delegatedChantierIds = delegations
+                    .filter(d => d.worker_id === currentUserProfile.id && new Date().toISOString().split('T')[0] >= d.start_date && new Date().toISOString().split('T')[0] <= d.end_date)
+                    .map(d => d.chantier_id);
+                const isAssignedToDelegated = delegatedChantierIds.some(chId => {
+                    return hoursAllocations[chId]?.[u.id] !== undefined;
+                });
+                if (u.id !== currentUserProfile.id && !isAssignedToDelegated) return false;
+            }
             if (hoursSelectFilterVal !== 'all' && hoursSelectFilterVal !== u.id) return false;
             const fullName = `${u.firstname} ${u.lastname}`;
             if (query && !fullName.toLowerCase().includes(query) && !u.role.toLowerCase().includes(query)) return false;
@@ -2794,7 +3236,7 @@ function renderHoursRows() {
             trUserParent.innerHTML = `
                 <td class="col-project-info" style="font-weight: 700;">
                     <div style="display: flex; align-items: center; gap: 10px; padding-left: 4px;">
-                        <div class="initials-bubble bubble-violet" style="width: 28px; height: 28px; font-size: 10px; line-height: 28px;">${userInitials}</div>
+                        ${getUserAvatar(u, 28)}
                         <span>${fullName}</span>
                     </div>
                 </td>
@@ -2809,8 +3251,6 @@ function renderHoursRows() {
             // Sub-rows of projects
             userProjects.forEach(up => {
                 const ch = up.chantier;
-                const projectInitials = ch.name.split(' ').map(w => w.charAt(0)).join('').substring(0, 2).toUpperCase();
-
                 const trProjSub = document.createElement('tr');
                 trProjSub.className = 'companion-row';
 
@@ -2818,7 +3258,7 @@ function renderHoursRows() {
                     <td class="col-project-info tree-connector-cell">
                         <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                <div class="initials-bubble bubble-blue">${projectInitials}</div>
+                                ${getChantierAvatar(ch, 36)}
                                 <div class="user-info">
                                     <span class="companion-name">${ch.name}</span>
                                     <span class="companion-role">Chantier</span>
@@ -2837,12 +3277,13 @@ function renderHoursRows() {
                     dailyTotals[d] += decVal;
 
                     const isToComplete = val === 'À compléter';
-                    daysHtml += `
-                        <td>
-                            <input type="text" class="hour-cell-input ${isToComplete ? 'input-to-complete' : ''}" value="${val}" 
-                                   data-chantier-id="${ch.id}" data-user-id="${u.id}" data-day="${d}">
-                        </td>
+                    const inputHtml = hasEditPermissionForChantier(ch.id) ? `
+                        <input type="text" class="hour-cell-input ${isToComplete ? 'input-to-complete' : ''}" value="${val}" 
+                               data-chantier-id="${ch.id}" data-user-id="${u.id}" data-day="${d}">
+                    ` : `
+                        <span class="hour-cell-value ${isToComplete ? 'text-to-complete' : ''}">${val}</span>
                     `;
+                    daysHtml += `<td>${inputHtml}</td>`;
                 }
 
                 grandTotal += projectRowTotal;
@@ -2929,6 +3370,296 @@ function renderHoursRows() {
             e.target.select();
         });
     });
+
+    // Render Mobile Hours List View
+    const mobileHoursListView = document.getElementById('mobile-hours-list-view');
+    if (mobileHoursListView) {
+        let mobileHtml = '';
+
+        // Calculate Monday to Friday dates of active week
+        const currentDay = currentPlanningDate.getDay();
+        const distanceToMon = currentDay === 0 ? -6 : 1 - currentDay;
+        const monday = new Date(currentPlanningDate);
+        monday.setDate(currentPlanningDate.getDate() + distanceToMon);
+
+        const daysOfWeek = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi'];
+
+        daysOfWeek.forEach((dayName, dIdx) => {
+            const currentDayDate = new Date(monday);
+            currentDayDate.setDate(monday.getDate() + dIdx);
+            const dayNumStr = String(currentDayDate.getDate()).padStart(2, '0');
+            const dayLabel = `${dayName} ${dayNumStr}`;
+
+            mobileHtml += `<div class="mobile-planning-day-header">${dayLabel}</div>`;
+
+            let dayAllocs = [];
+
+            if (currentHoursView === 'chantiers') {
+                chantiers.forEach(ch => {
+                    if (hoursSelectFilterVal !== 'all' && hoursSelectFilterVal !== ch.id) return;
+                    
+                    const pAllocs = hoursAllocations[ch.id] || {};
+                    let assignedUserIds = Object.keys(pAllocs);
+                    if (isOuvrier) {
+                        assignedUserIds = assignedUserIds.filter(uId => uId === currentUserProfile.id);
+                    }
+
+                    let companionsOnDay = [];
+                    assignedUserIds.forEach(uId => {
+                        const user = users.find(u => u.id === uId);
+                        if (user) {
+                            const val = pAllocs[uId][dIdx] || '00:00';
+                            companionsOnDay.push({
+                                user: user,
+                                value: val
+                            });
+                        }
+                    });
+
+                    if (companionsOnDay.length > 0) {
+                        const isCollapsed = collapsedProjects[ch.id] || false;
+                        dayAllocs.push({
+                            id: ch.id,
+                            title: ch.name,
+                            companionsCount: companionsOnDay.length,
+                            companions: companionsOnDay,
+                            isCollapsed: isCollapsed,
+                            color: ch.color || '#3b82f6',
+                            initials: ch.name.split(' ').map(w => w.charAt(0)).join('').substring(0, 2).toUpperCase()
+                        });
+                    }
+                });
+            } else {
+                // Users view
+                const filteredHoursUsers = users.filter(u => {
+                    if (isOuvrier && u.id !== currentUserProfile.id) return false;
+                    if (hoursSelectFilterVal !== 'all' && hoursSelectFilterVal !== u.id) return false;
+                    return true;
+                });
+
+                filteredHoursUsers.forEach(u => {
+                    let userAllocsOnDay = [];
+                    chantiers.forEach(ch => {
+                        const pAllocs = hoursAllocations[ch.id] || {};
+                        if (pAllocs[u.id]) {
+                            const val = pAllocs[u.id][dIdx] || '00:00';
+                            userAllocsOnDay.push({
+                                chantier: ch,
+                                value: val
+                            });
+                        }
+                    });
+
+                    if (userAllocsOnDay.length > 0) {
+                        dayAllocs.push({
+                            id: u.id,
+                            title: `${u.firstname} ${u.lastname}`,
+                            subtitle: u.role,
+                            projects: userAllocsOnDay,
+                            isCollapsed: collapsedUsers[u.id] || false,
+                            initials: `${u.firstname.charAt(0)}${u.lastname.charAt(0)}`.toUpperCase()
+                        });
+                    }
+                });
+            }
+
+            if (dayAllocs.length === 0) {
+                mobileHtml += `
+                    <div class="mobile-planning-card" style="justify-content: center; color: #94a3b8; font-style: italic; font-size: 12px; background: white;">
+                        Aucune heure saisie
+                    </div>
+                `;
+            } else {
+                dayAllocs.forEach(alloc => {
+                    if (currentHoursView === 'chantiers') {
+                        // Collapsible Chantier Row
+                        const arrowSvg = `
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" style="transform: ${alloc.isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)'}; transition: transform 0.2s; margin-left: 6px; display: inline-block; vertical-align: middle;">
+                                <polyline points="6 9 12 15 18 9"/>
+                            </svg>
+                        `;
+
+                        mobileHtml += `
+                            <div class="mobile-planning-card hours-project-toggle-card" data-project-id="${alloc.id}" style="background: white; cursor: pointer;">
+                                <div class="mobile-planning-card-left">
+                                    <div class="initials-bubble" style="background-color: ${alloc.color}; width: 32px; height: 32px; font-size: 11px; line-height: 32px; margin: 0; color: white;">
+                                        ${alloc.initials}
+                                    </div>
+                                    <div style="display: flex; flex-direction: column;">
+                                        <span class="mobile-planning-card-title">${alloc.title}</span>
+                                        <span style="font-size: 11px; color: var(--accent); font-weight: 700; margin-top: 2px; display: flex; align-items: center; gap: 4px;">
+                                            Voir les heures ${arrowSvg}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+
+                        if (!alloc.isCollapsed) {
+                            alloc.companions.forEach(comp => {
+                                const initialsComp = `${comp.user.firstname.charAt(0)}${comp.user.lastname.charAt(0)}`.toUpperCase();
+                                const isToComplete = comp.value === 'À compléter';
+                                const hasHours = comp.value !== '00:00' && !isToComplete;
+
+                                const inputHtml = hasEditPermissionForChantier(alloc.id) ? `
+                                    <input type="text" class="hour-cell-input ${isToComplete ? 'input-to-complete' : ''}" value="${comp.value}" 
+                                           data-chantier-id="${alloc.id}" data-user-id="${comp.user.id}" data-day="${dIdx}"
+                                           style="width: 70px; text-align: center; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px;">
+                                ` : `
+                                    <span style="font-weight: 800; color: ${hasHours ? '#16a34a' : '#64748b'};">${comp.value}</span>
+                                `;
+
+                                mobileHtml += `
+                                    <div class="mobile-planning-card" style="background: #f8fafc; padding-left: 36px; border-left: 4px solid var(--accent);">
+                                        <div class="mobile-planning-card-left">
+                                            <div class="initials-bubble bubble-violet" style="width: 28px; height: 28px; font-size: 10px; line-height: 28px; margin: 0;">
+                                                ${initialsComp}
+                                            </div>
+                                            <div style="display: flex; flex-direction: column;">
+                                                <span style="font-size: 13px; font-weight: 700; color: #334155;">${comp.user.firstname} ${comp.user.lastname}</span>
+                                                <span style="font-size: 11px; color: #64748b;">${comp.user.role}</span>
+                                            </div>
+                                        </div>
+                                        ${inputHtml}
+                                    </div>
+                                `;
+                            });
+                        }
+                    } else {
+                        // Users Mode
+                        const arrowSvg = `
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" style="transform: ${alloc.isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)'}; transition: transform 0.2s; margin-left: 6px; display: inline-block; vertical-align: middle;">
+                                <polyline points="6 9 12 15 18 9"/>
+                            </svg>
+                        `;
+
+                        mobileHtml += `
+                            <div class="mobile-planning-card hours-user-toggle-card" data-user-id="${alloc.id}" style="background: white; cursor: pointer;">
+                                <div class="mobile-planning-card-left">
+                                    <div class="initials-bubble bubble-violet" style="width: 32px; height: 32px; font-size: 11px; line-height: 32px; margin: 0;">
+                                        ${alloc.initials}
+                                    </div>
+                                    <div style="display: flex; flex-direction: column;">
+                                        <span class="mobile-planning-card-title">${alloc.title}</span>
+                                        <span style="font-size: 11px; color: var(--accent); font-weight: 700; margin-top: 2px; display: flex; align-items: center; gap: 4px;">
+                                            Voir les heures ${arrowSvg}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+
+                        if (!alloc.isCollapsed) {
+                            alloc.projects.forEach(p => {
+                                const initialsCh = p.chantier.name.split(' ').map(w => w.charAt(0)).join('').substring(0, 2).toUpperCase();
+                                const isToComplete = p.value === 'À compléter';
+                                const hasHours = p.value !== '00:00' && !isToComplete;
+
+                                const inputHtml = (isAdmin || isChef) ? `
+                                    <input type="text" class="hour-cell-input ${isToComplete ? 'input-to-complete' : ''}" value="${p.value}" 
+                                           data-chantier-id="${p.chantier.id}" data-user-id="${alloc.id}" data-day="${dIdx}"
+                                           style="width: 70px; text-align: center; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px;">
+                                ` : `
+                                    <span style="font-weight: 800; color: ${hasHours ? '#16a34a' : '#64748b'};">${p.value}</span>
+                                `;
+
+                                mobileHtml += `
+                                    <div class="mobile-planning-card" style="background: #f8fafc; padding-left: 36px; border-left: 4px solid var(--accent);">
+                                        <div class="mobile-planning-card-left">
+                                            <div class="initials-bubble" style="background-color: ${p.chantier.color || '#3b82f6'}; width: 28px; height: 28px; font-size: 9px; line-height: 28px; margin: 0; color: white;">
+                                                ${initialsCh}
+                                            </div>
+                                            <div style="display: flex; flex-direction: column;">
+                                                <span style="font-size: 13px; font-weight: 700; color: #334155;">${p.chantier.name}</span>
+                                                <span style="font-size: 11px; color: #64748b;">Chantier</span>
+                                            </div>
+                                        </div>
+                                        ${inputHtml}
+                                    </div>
+                                `;
+                            });
+                        }
+                    }
+                });
+            }
+        });
+
+        mobileHoursListView.innerHTML = mobileHtml;
+
+        // Bind collapsible actions for mobile hours list
+        mobileHoursListView.querySelectorAll('.hours-project-toggle-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const projectId = card.getAttribute('data-project-id');
+                collapsedProjects[projectId] = !collapsedProjects[projectId];
+                renderHoursRows();
+            });
+        });
+
+        mobileHoursListView.querySelectorAll('.hours-user-toggle-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const userId = card.getAttribute('data-user-id');
+                collapsedUsers[userId] = !collapsedUsers[userId];
+                renderHoursRows();
+            });
+        });
+
+        // Bind event listeners to input fields inside mobile view
+        const mobileInputs = mobileHoursListView.querySelectorAll('.hour-cell-input');
+        mobileInputs.forEach(input => {
+            input.addEventListener('change', async (e) => {
+                const chId = input.dataset.chantierId;
+                const uId = input.dataset.userId;
+                const day = parseInt(input.dataset.day, 10);
+                const rawVal = e.target.value;
+                const sanitized = sanitizeHourInput(rawVal);
+
+                if (useSupabase) {
+                    await supabaseClient.from('hours_allocations').upsert([{
+                        chantier_id: chId,
+                        user_id: uId,
+                        day_index: day,
+                        hours_value: sanitized
+                    }]);
+
+                    if (!hoursAllocations[chId]) hoursAllocations[chId] = {};
+                    if (!hoursAllocations[chId][uId]) hoursAllocations[chId][uId] = {};
+                    hoursAllocations[chId][uId][day] = sanitized;
+
+                    let totalProjHours = 0;
+                    Object.keys(hoursAllocations[chId]).forEach(workerId => {
+                        for (let wd = 0; wd < 5; wd++) {
+                            totalProjHours += timeStringToDecimal(hoursAllocations[chId][workerId][wd]);
+                        }
+                    });
+                    const finalHours = totalProjHours + (chId === 'c1' ? 70 : chId === 'c2' ? 80 : 0);
+                    await supabaseClient.from('chantiers').update({ worked_hours: finalHours }).eq('id', chId);
+                    await loadDataFromSupabase();
+                } else {
+                    if (!hoursAllocations[chId]) hoursAllocations[chId] = {};
+                    if (!hoursAllocations[chId][uId]) hoursAllocations[chId][uId] = {};
+                    hoursAllocations[chId][uId][day] = sanitized;
+
+                    const chantier = chantiers.find(c => c.id === chId);
+                    if (chantier) {
+                        let totalProjHours = 0;
+                        Object.keys(hoursAllocations[chId]).forEach(workerId => {
+                            for (let wd = 0; wd < 5; wd++) {
+                                totalProjHours += timeStringToDecimal(hoursAllocations[chId][workerId][wd]);
+                            }
+                        });
+                        chantier.workedHours = totalProjHours + (chId === 'c1' ? 70 : chId === 'c2' ? 80 : 0);
+                        renderDashboard();
+                    }
+                }
+
+                renderHoursRows();
+            });
+
+            input.addEventListener('focus', (e) => {
+                e.target.select();
+            });
+        });
+    }
 }
 
 // ==========================================
@@ -2958,12 +3689,13 @@ function renderChantierDetail() {
     headerEl.innerHTML = `
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
             <div style="display: flex; align-items: center; gap: 14px;">
-                <div class="initials-bubble bubble-violet" style="width: 44px; height: 44px; font-size: 16px; line-height: 44px; font-weight: 700; background: linear-gradient(135deg, #e11d48, #be123c);">${initials}</div>
+                ${getChantierAvatar(ch, 44, 'font-weight:700;background:linear-gradient(135deg, #e11d48, #be123c);')}
                 <div>
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <h2 style="font-family: var(--font-heading); font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 0;">${ch.name}</h2>
                         <span class="status-pill status-active" style="background-color: #d1fae5; color: #065f46; font-weight: 600; font-size: 11px; padding: 2px 8px; border-radius: 9999px;">${ch.status}</span>
                     </div>
+                    ${ch.entreprise ? `<div style="font-size: 13px; color: var(--gray-muted); margin-top: 4px;">Entreprise : <strong>${ch.entreprise}</strong></div>` : ''}
                 </div>
             </div>
             <div style="display: flex; align-items: center; gap: 12px;">
@@ -2975,6 +3707,7 @@ function renderChantierDetail() {
                     </svg>
                     Exporter le rapport PDF
                 </button>
+                ${isAdmin ? `
                 <button class="btn btn-primary" onclick="openEditChantierModal('${ch.id}')" style="font-size: 13px; display: flex; align-items: center; gap: 6px; background-color: var(--accent);">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -2982,6 +3715,7 @@ function renderChantierDetail() {
                     </svg>
                     Modifier
                 </button>
+                ` : ''}
             </div>
         </div>
     `;
@@ -3028,27 +3762,27 @@ function renderChantierDetail() {
                         <h3 class="detail-card-title">Informations</h3>
                         <ul class="info-list">
                             <li class="info-item">
-                                <span class="info-icon">👤</span>
+                                <span class="info-icon"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1024 1024" width="20" height="20" fill="currentColor"><g><circle cx="512" cy="277.3" r="220.7"/><path d="M841.5,967.4h-659c-26.5,0-48-21.5-48-48V804.7c0-127.6,103.4-231,231-231h293c127.6,0,231,103.4,231,231v114.7C889.5,945.9,868,967.4,841.5,967.4z"/></g></svg></span>
                                 <span>Client : <strong>${ch.client}</strong></span>
                             </li>
                             <li class="info-item">
-                                <span class="info-icon">📍</span>
+                                <span class="info-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="20" height="20" fill="currentColor"><path d="M50,77.13l-1.79-2.35C47.34,73.64,27,46.67,27,27.93a23,23,0,0,1,46.08,0c0,18.74-20.38,45.71-21.25,46.85ZM50,9.5A18.51,18.51,0,0,0,31.46,27.93C31.46,42.07,45,62.57,50,69.59c5-7,18.54-27.52,18.54-41.66A18.51,18.51,0,0,0,50,9.5Z"/><path d="M50,40.37A12.44,12.44,0,1,1,62.44,27.93,12.45,12.45,0,0,1,50,40.37ZM50,20a7.94,7.94,0,1,0,7.94,7.94A8,8,0,0,0,50,20Z"/><path d="M50,95C28.19,95,5,89,5,77.77,5,71.44,12.83,66.06,26.48,63l.95-.21L41.2,74.15,38,75.35c-2.68,1-3.55,2.06-3.55,2.42C34.4,79,39.87,82,50,82s15.6-3,15.6-4.24c0-.36-.87-1.42-3.55-2.42l-3.25-1.2L72.57,62.77l1,.21C87.17,66.06,95,71.44,95,77.77,95,89,71.81,95,50,95ZM26.4,67.1C15.8,69.64,9,73.79,9,77.77,9,84,25.84,91,50,91s41-7,41-13.23c0-4-6.8-8.13-17.4-10.67L66.42,73c2.56,1.61,3.18,3.39,3.18,4.74C69.6,83.18,59.74,86,50,86s-19.6-2.83-19.6-8.24c0-1.35.62-3.13,3.18-4.74Z"/></svg></span>
                                 <span><a href="https://maps.google.com/?q=${encodeURIComponent(ch.address)}" target="_blank">${ch.address}</a></span>
                             </li>
                             <li class="info-item">
-                                <span class="info-icon">📅</span>
+                                <span class="info-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-5.0 -10.0 110.0 135.0" width="20" height="20" fill="currentColor"><path d="m25.398 60.898h5.8008c2.1992 0 3.8984-1.8008 3.8984-3.8984v-5.8008c0-2.1992-1.8008-3.8984-3.8984-3.8984h-5.8008c-2.1992 0-3.8984 1.8008-3.8984 3.8984v5.8008c0 2.1016 1.6992 3.8984 3.8984 3.8984z"/><path d="m47 60.898h5.8008c2.1992 0 3.8984-1.8008 3.8984-3.8984v-5.8008c0-2.1992-1.8008-3.8984-3.8984-3.8984h-5.8008c-2.1992 0-3.8984 1.8008-3.8984 3.8984v5.8008c0 2.1016 1.6992 3.8984 3.8984 3.8984z"/><path d="m47 81.699h5.8008c2.1992 0 3.8984-1.8008 3.8984-3.8984v-5.8008c0-2.1992-1.8008-3.8984-3.8984-3.8984h-5.8008c-2.1992 0-3.8984 1.8008-3.8984 3.8984v5.8008c0 2.0977 1.6992 3.8984 3.8984 3.8984z"/><path d="m25.398 81.699h5.8008c2.1992 0 3.8984-1.8008 3.8984-3.8984v-5.8008c0-2.1992-1.8008-3.8984-3.8984-3.8984h-5.8008c-2.1992 0-3.8984 1.8008-3.8984 3.8984v5.8008c0 2.0977 1.6992 3.8984 3.8984 3.8984z"/><path d="m68.602 60.898h5.8008c2.1992 0 3.8984-1.8008 3.8984-3.8984v-5.8008c0-2.1992-1.8008-3.8984-3.8984-3.8984h-5.8008c-2.1992 0-3.8984 1.8008-3.8984 3.8984v5.8008c-0.003906 2.1016 1.6953 3.8984 3.8984 3.8984z"/><path d="m68.602 81.699h5.8008c2.1992 0 3.8984-1.8008 3.8984-3.8984v-5.8008c0-2.1992-1.8008-3.8984-3.8984-3.8984h-5.8008c-2.1992 0-3.8984 1.8008-3.8984 3.8984v5.8008c-0.003906 2.0977 1.6953 3.8984 3.8984 3.8984z"/><path d="m28.301 20.898c2.1992 0 4-1.8008 4-4v-10.398c0-2.1992-1.8008-4-4-4s-4 1.8008-4 4v10.5c0.097657 2.1016 1.8008 3.8984 4 3.8984z"/><path d="m71.5 20.898c2.1992 0 4-1.8008 4-4v-10.398c0-2.1992-1.8008-4-4-4s-4 1.8008-4 4v10.5c0.10156 2.1016 1.8008 3.8984 4 3.8984z"/><path d="m83.898 12.602h-3.5v4.3984c0 4.8984-4 8.8008-8.8008 8.8008-4.8008 0-8.8008-4-8.8008-8.8008v-4.3008h-25.598v4.3008c0 4.8984-4 8.8008-8.8008 8.8008-4.8984 0-8.8008-4-8.8008-8.8008v-4.3008h-3.3984c-6.6016 0-12 5.3984-12 12v60.898c0 6.6016 5.3984 12 12 12h67.801c6.6016 0 12-5.3984 12-12v-60.996c-0.10156-6.6016-5.5-12-12.102-12zm4.2031 72.898c0 2.3008-1.8984 4.1992-4.1992 4.1992h-67.801c-2.3008 0-4.1992-1.8984-4.1992-4.1992l-0.003906-46.398h76.301v46.398z"/></svg></span>
                                 <span>Date de début : <strong>04/07/2026</strong></span>
                             </li>
                             <li class="info-item">
-                                <span class="info-icon">📅</span>
+                                <span class="info-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-5.0 -10.0 110.0 135.0" width="20" height="20" fill="currentColor"><path d="m25.398 60.898h5.8008c2.1992 0 3.8984-1.8008 3.8984-3.8984v-5.8008c0-2.1992-1.8008-3.8984-3.8984-3.8984h-5.8008c-2.1992 0-3.8984 1.8008-3.8984 3.8984v5.8008c0 2.1016 1.6992 3.8984 3.8984 3.8984z"/><path d="m47 60.898h5.8008c2.1992 0 3.8984-1.8008 3.8984-3.8984v-5.8008c0-2.1992-1.8008-3.8984-3.8984-3.8984h-5.8008c-2.1992 0-3.8984 1.8008-3.8984 3.8984v5.8008c0 2.1016 1.6992 3.8984 3.8984 3.8984z"/><path d="m47 81.699h5.8008c2.1992 0 3.8984-1.8008 3.8984-3.8984v-5.8008c0-2.1992-1.8008-3.8984-3.8984-3.8984h-5.8008c-2.1992 0-3.8984 1.8008-3.8984 3.8984v5.8008c0 2.0977 1.6992 3.8984 3.8984 3.8984z"/><path d="m25.398 81.699h5.8008c2.1992 0 3.8984-1.8008 3.8984-3.8984v-5.8008c0-2.1992-1.8008-3.8984-3.8984-3.8984h-5.8008c-2.1992 0-3.8984 1.8008-3.8984 3.8984v5.8008c0 2.0977 1.6992 3.8984 3.8984 3.8984z"/><path d="m68.602 60.898h5.8008c2.1992 0 3.8984-1.8008 3.8984-3.8984v-5.8008c0-2.1992-1.8008-3.8984-3.8984-3.8984h-5.8008c-2.1992 0-3.8984 1.8008-3.8984 3.8984v5.8008c-0.003906 2.1016 1.6953 3.8984 3.8984 3.8984z"/><path d="m68.602 81.699h5.8008c2.1992 0 3.8984-1.8008 3.8984-3.8984v-5.8008c0-2.1992-1.8008-3.8984-3.8984-3.8984h-5.8008c-2.1992 0-3.8984 1.8008-3.8984 3.8984v5.8008c-0.003906 2.0977 1.6953 3.8984 3.8984 3.8984z"/><path d="m28.301 20.898c2.1992 0 4-1.8008 4-4v-10.398c0-2.1992-1.8008-4-4-4s-4 1.8008-4 4v10.5c0.097657 2.1016 1.8008 3.8984 4 3.8984z"/><path d="m71.5 20.898c2.1992 0 4-1.8008 4-4v-10.398c0-2.1992-1.8008-4-4-4s-4 1.8008-4 4v10.5c0.10156 2.1016 1.8008 3.8984 4 3.8984z"/><path d="m83.898 12.602h-3.5v4.3984c0 4.8984-4 8.8008-8.8008 8.8008-4.8008 0-8.8008-4-8.8008-8.8008v-4.3008h-25.598v4.3008c0 4.8984-4 8.8008-8.8008 8.8008-4.8984 0-8.8008-4-8.8008-8.8008v-4.3008h-3.3984c-6.6016 0-12 5.3984-12 12v60.898c0 6.6016 5.3984 12 12 12h67.801c6.6016 0 12-5.3984 12-12v-60.996c-0.10156-6.6016-5.5-12-12.102-12zm4.2031 72.898c0 2.3008-1.8984 4.1992-4.1992 4.1992h-67.801c-2.3008 0-4.1992-1.8984-4.1992-4.1992l-0.003906-46.398h76.301v46.398z"/></svg></span>
                                 <span>Date de fin : <strong>04/07/2027</strong></span>
                             </li>
                             <li class="info-item">
-                                <span class="info-icon">🕒</span>
+                                <span class="info-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="20" height="20" fill="currentColor"><path d="M 50 5 C 25.182718 5 5 25.1827 5 50 C 5 74.8172 25.182714 95 50 95 C 74.817295 95 95 74.8172 95 50 C 95 25.1827 74.81729 5 50 5 z M 47 11.125 L 47 15 A 3.0003 3.0003 0 1 0 53 15 L 53 11.125 C 72.168401 12.578094 87.413808 27.833892 88.875 47 L 85 47 A 3.0003 3.0003 0 0 0 84.6875 47 A 3.0040663 3.0040663 0 1 0 85 53 L 88.875 53 C 87.428122 72.179986 72.177719 87.420015 53 88.875 L 53 85 A 3.0003 3.0003 0 0 0 49.96875 81.9375 A 3.0003 3.0003 0 0 0 47 85 L 47 88.875 C 27.822287 87.420015 12.571879 72.179986 11.125 53 L 15 53 A 3.0003 3.0003 0 1 0 15 47 L 11.125 47 C 12.586193 27.833892 27.831607 12.578094 47 11.125 z M 33.65625 30.96875 A 3.0003 3.0003 0 0 0 31.875 36.09375 L 45.0625 49.28125 C 45.027559 49.519813 45 49.751738 45 50 C 45 52.7614 47.238575 55 50 55 C 52.761425 55 55 52.7614 55 50 C 55 47.23858 52.761425 45 50 45 C 49.762358 45 49.541304 45.030436 49.3125 45.0625 L 36.125 31.875 A 3.0003 3.0003 0 0 0 33.65625 30.96875 z"/></svg></span>
                                 <span>Heure de début : <strong>09:00</strong></span>
                             </li>
                             <li class="info-item">
-                                <span class="info-icon">🕒</span>
+                                <span class="info-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="20" height="20" fill="currentColor"><path d="M 50 5 C 25.182718 5 5 25.1827 5 50 C 5 74.8172 25.182714 95 50 95 C 74.817295 95 95 74.8172 95 50 C 95 25.1827 74.81729 5 50 5 z M 47 11.125 L 47 15 A 3.0003 3.0003 0 1 0 53 15 L 53 11.125 C 72.168401 12.578094 87.413808 27.833892 88.875 47 L 85 47 A 3.0003 3.0003 0 0 0 84.6875 47 A 3.0040663 3.0040663 0 1 0 85 53 L 88.875 53 C 87.428122 72.179986 72.177719 87.420015 53 88.875 L 53 85 A 3.0003 3.0003 0 0 0 49.96875 81.9375 A 3.0003 3.0003 0 0 0 47 85 L 47 88.875 C 27.822287 87.420015 12.571879 72.179986 11.125 53 L 15 53 A 3.0003 3.0003 0 1 0 15 47 L 11.125 47 C 12.586193 27.833892 27.831607 12.578094 47 11.125 z M 33.65625 30.96875 A 3.0003 3.0003 0 0 0 31.875 36.09375 L 45.0625 49.28125 C 45.027559 49.519813 45 49.751738 45 50 C 45 52.7614 47.238575 55 50 55 C 52.761425 55 55 52.7614 55 50 C 55 47.23858 52.761425 45 50 45 C 49.762358 45 49.541304 45.030436 49.3125 45.0625 L 36.125 31.875 A 3.0003 3.0003 0 0 0 33.65625 30.96875 z"/></svg></span>
                                 <span>Heure de fin : <strong>17:00</strong></span>
                             </li>
                         </ul>
@@ -3057,7 +3791,7 @@ function renderChantierDetail() {
                     <div class="detail-card">
                         <h3 class="detail-card-title">Contact chantier</h3>
                         <div class="info-item">
-                            <span class="info-icon">📞</span>
+                            <span class="info-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-5.0 -10.0 110.0 135.0" width="20" height="20" fill="currentColor"><path d="m33 7c-4.4141 0-8 3.5859-8 8v70c0 4.4141 3.5859 8 8 8h34c4.4141 0 8-3.5859 8-8v-70c0-4.4141-3.5859-8-8-8zm0 2h34c3.3398 0 6 2.6602 6 6v2h-46v-2c0-3.3398 2.6602-6 6-6zm-6 10h46v58h-46zm0 60h46v6c0 3.3398-2.6602 6-6 6h-34c-3.3398 0-6-2.6602-6-6zm23 4c-1.1055 0-2 0.89453-2 2s0.89453 2 2 2 2-0.89453 2-2-0.89453-2-2-2z"/></svg></span>
                             <span style="font-weight: 600; color: var(--accent);">01 23 45 67 89</span>
                         </div>
                     </div>
@@ -3085,7 +3819,9 @@ function renderChantierDetail() {
                         <div class="feed-input-wrapper">
                             <input type="text" id="chantier-new-post-input" class="feed-text-input" placeholder="Exprimez-vous">
                             <div class="feed-input-actions">
-                                <button class="feed-input-action-btn" onclick="alert('Ajout d\\\'image simulé')">📷</button>
+                                <button class="feed-input-action-btn" onclick="alert('Ajout d\\\'image simulé')" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="-5.0 -10.0 110.0 135.0" width="20" height="20" fill="currentColor"><path d="m90.602 8.8008h-68.902c-3.8008 0-6.8984 3.1016-6.8984 6.8984v4.6992h-5.4023c-3.8008 0-6.8984 3.1016-6.8984 6.8984v56.898c0 3.8008 3.1016 6.8984 6.8984 6.8984h68.898c3.8008 0 6.8984-3.1016 6.8984-6.8984v-4.6992h5.3984c3.8008 0 6.8984-3.1016 6.8984-6.8984l0.007812-56.898c0-3.8008-3.1016-6.8984-6.8984-6.8984zm-11.402 64.699v10.699c0 0.5-0.39844 0.89844-0.89844 0.89844l-68.902 0.003906c-0.5 0-0.89844-0.39844-0.89844-0.89844v-56.805c0-0.5 0.39844-0.89844 0.89844-0.89844h68.898c0.5 0 0.89844 0.39844 0.89844 0.89844zm12.301-0.89844c0 0.5-0.39844 0.89844-0.89844 0.89844h-5.3984l-0.003906-46.102c0-3.8008-3.1016-6.8984-6.8984-6.8984h-57.5v-4.6992c0-0.5 0.39844-0.89844 0.89844-0.89844h68.898c0.5 0 0.89844 0.39844 0.89844 0.89844z"/><path d="m43.898 65.801-11.699-10-18.301 17.898v6.1016h59.902v-22.199l-10.902-13.402z"/><path d="m25.301 49.5c4.6016 0 8.3984-3.8008 8.3984-8.3984 0-4.6016-3.8008-8.3984-8.3984-8.3984-4.6016 0-8.3984 3.8008-8.3984 8.3984-0.003906 4.5977 3.7969 8.3984 8.3984 8.3984z"/></svg>
+                                </button>
                                 <button class="feed-input-action-btn" id="btn-submit-chantier-post" style="color: var(--accent); font-weight: bold; font-size: 16px;">➔</button>
                             </div>
                         </div>
@@ -3229,7 +3965,7 @@ function renderChantierDetail() {
                     <tr class="companion-row">
                         <td class="col-project-info tree-connector-cell">
                             <div class="companion-info-cell" style="display: flex; align-items: center; gap: 8px;">
-                                <div class="initials-bubble bubble-violet">${initialsUser}</div>
+                                ${getUserAvatar(user, 36)}
                                 <div class="user-info">
                                     <span class="companion-name">${user.firstname} ${user.lastname}</span>
                                     <span class="companion-role">${user.role}</span>
@@ -3318,7 +4054,7 @@ function renderChantierDetail() {
                     <tr class="companion-row">
                         <td class="col-project-info tree-connector-cell">
                             <div class="companion-info-cell" style="display: flex; align-items: center; gap: 8px;">
-                                <div class="initials-bubble bubble-violet">${initialsUser}</div>
+                                ${getUserAvatar(user, 36)}
                                 <div class="user-info">
                                     <span class="companion-name">${user.firstname} ${user.lastname}</span>
                                     <span class="companion-role">${user.role}</span>
@@ -3655,6 +4391,19 @@ function initHoursDrawer() {
             activeHourInput = null;
         }
     });
+
+    // Mettre sur "À compléter" button click handler
+    const btnSetToComplete = document.getElementById('btn-drawer-set-to-complete');
+    if (btnSetToComplete) {
+        btnSetToComplete.addEventListener('click', () => {
+            if (!activeHourInput) return;
+            activeHourInput.value = 'À compléter';
+            activeHourInput.dispatchEvent(new Event('change'));
+            drawer.classList.remove('show');
+            if (activeHourInput) activeHourInput.blur();
+            activeHourInput = null;
+        });
+    }
 }
 
 function openEditChantierModal(chantierId) {
@@ -3667,6 +4416,11 @@ function openEditChantierModal(chantierId) {
     // Core fields recovery
     const clientVal = ch.client || '';
     document.getElementById('edit-chantier-client').value = clientVal;
+    
+    const entrepriseVal = ch.entreprise || '';
+    if (document.getElementById('edit-chantier-entreprise')) {
+        document.getElementById('edit-chantier-entreprise').value = entrepriseVal;
+    }
     
     // Parse address components
     let street = '';
@@ -3716,7 +4470,33 @@ function openEditChantierModal(chantierId) {
     }
 
     const modal = document.getElementById('edit-chantier-modal');
-    if (modal) modal.classList.add('show');
+    if (modal) {
+        // Pre-display existing chantier image in the uploader
+        const uploader = modal.querySelector('.image-uploader');
+        if (uploader) {
+            // Reset first
+            const oldPreview = uploader.querySelector('.uploader-preview-img');
+            if (oldPreview) oldPreview.remove();
+            uploader.querySelectorAll(':not(.image-uploader-input)').forEach(child => {
+                child.style.opacity = '';
+            });
+            uploader.removeAttribute('data-image-base64');
+
+            if (ch.image) {
+                uploader.setAttribute('data-image-base64', ch.image);
+                const previewImg = document.createElement('img');
+                previewImg.className = 'uploader-preview-img';
+                previewImg.src = ch.image;
+                previewImg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;border-radius:8px;';
+                uploader.style.position = 'relative';
+                uploader.appendChild(previewImg);
+                uploader.querySelectorAll(':not(.uploader-preview-img):not(.image-uploader-input)').forEach(child => {
+                    child.style.opacity = '0';
+                });
+            }
+        }
+        modal.classList.add('show');
+    }
 }
 
 async function saveEditChantier(e) {
@@ -3727,6 +4507,7 @@ async function saveEditChantier(e) {
     const code = document.getElementById('edit-chantier-code').value.trim();
     const description = document.getElementById('edit-chantier-desc').value.trim();
     const client = document.getElementById('edit-chantier-client').value.trim();
+    const entreprise = document.getElementById('edit-chantier-entreprise') ? document.getElementById('edit-chantier-entreprise').value.trim() : '';
     const dateStart = document.getElementById('edit-chantier-date-start').value;
     const dateEnd = document.getElementById('edit-chantier-date-end').value;
     const timeStart = document.getElementById('edit-chantier-time-start').value;
@@ -3756,6 +4537,7 @@ async function saveEditChantier(e) {
             code,
             description,
             client,
+            entreprise,
             dateStart,
             dateEnd,
             timeStart,
@@ -3772,6 +4554,19 @@ async function saveEditChantier(e) {
             contactEmail
         };
 
+        // Save image if one was selected in the uploader
+        const editUploader = document.querySelector('#edit-chantier-modal .image-uploader');
+        if (editUploader) {
+            const imgData = editUploader.getAttribute('data-image-base64');
+            if (imgData) {
+                chantiers[chIdx].image = imgData;
+                // Persist to localStorage so it survives page refresh
+                const savedImages = JSON.parse(localStorage.getItem('chantier_images') || '{}');
+                savedImages[id] = imgData;
+                localStorage.setItem('chantier_images', JSON.stringify(savedImages));
+            }
+        }
+
         // Update database if using Supabase
         if (useSupabase && supabaseClient) {
             try {
@@ -3780,6 +4575,7 @@ async function saveEditChantier(e) {
                     .update({
                         name,
                         client,
+                        entreprise,
                         address: fullAddress || 'Adresse non renseignée',
                         status,
                         budget_hours: budgetHours,
@@ -4410,3 +5206,1033 @@ function exportChantierPDF(chantierId) {
     printWindow.document.close();
 }
 
+// =============================================================================
+// ROLE PERMISSIONS & ACCESS CONTROL LOGIC
+// =============================================================================
+
+function checkDelegationRole() {
+    if (!currentUserProfile) return;
+    const todayStr = new Date().toISOString().split('T')[0];
+    const activeDels = delegations.filter(d => {
+        return d.worker_id === currentUserProfile.id && 
+               todayStr >= d.start_date && 
+               todayStr <= d.end_date;
+    });
+    if (activeDels.length > 0) {
+        console.log(`L'utilisateur dispose de ${activeDels.length} délégation(s) active(s) aujourd'hui.`);
+    }
+}
+
+function hasEditPermissionForChantier(chantierId) {
+    if (isAdmin) return true;
+    if (isChef) return true;
+
+    if (currentUserProfile) {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const activeDel = delegations.find(d => {
+            const hasCh = d.chantier_ids ? d.chantier_ids.includes(chantierId) : (d.chantier_id === chantierId);
+            return d.worker_id === currentUserProfile.id && 
+                   hasCh &&
+                   todayStr >= d.start_date && 
+                   todayStr <= d.end_date;
+        });
+        if (activeDel) return true;
+    }
+    return false;
+}
+
+function applyRolePermissions() {
+    const toggleChantiers = document.getElementById('plan-toggle-chantiers');
+    const toggleUsers = document.getElementById('plan-toggle-users');
+
+    // Reset all sidebar links visibility to default
+    const allTabs = ['users', 'chantiers', 'planning', 'hours', 'settings'];
+    allTabs.forEach(tab => {
+        const el = document.querySelector(`.sidebar-nav [data-tab="${tab}"]`);
+        if (el) el.style.display = '';
+    });
+
+    if (isAdmin) {
+        // Show Admin dashboard and hide worker dashboard
+        const adminView = document.getElementById('admin-dashboard-view');
+        const workerView = document.getElementById('worker-dashboard-view');
+        if (adminView) adminView.style.display = 'block';
+        if (workerView) workerView.style.display = 'none';
+
+        if (toggleChantiers && toggleUsers) {
+            toggleChantiers.childNodes[toggleChantiers.childNodes.length - 1].textContent = ' Chantiers';
+            toggleUsers.childNodes[toggleUsers.childNodes.length - 1].textContent = ' Utilisateurs';
+        }
+        return; 
+    }
+
+    // Non-admin (Worker / Foreman) views configuration
+    const adminView = document.getElementById('admin-dashboard-view');
+    const workerView = document.getElementById('worker-dashboard-view');
+    if (adminView) adminView.style.display = 'none';
+    if (workerView) workerView.style.display = 'flex';
+
+    if (toggleChantiers && toggleUsers) {
+        toggleChantiers.childNodes[toggleChantiers.childNodes.length - 1].textContent = ' Planning Général';
+        toggleUsers.childNodes[toggleUsers.childNodes.length - 1].textContent = ' Mon planning';
+        
+        // Invert default view for workers to show "Mon planning" first
+        currentPlanningView = 'users';
+        toggleChantiers.classList.remove('active');
+        toggleUsers.classList.add('active');
+    }
+
+    // Hide sidebar links that are not allowed
+    const tabsToHide = isOuvrier ? ['users', 'settings'] : ['users'];
+    tabsToHide.forEach(tab => {
+        const el = document.querySelector(`.sidebar-nav [data-tab="${tab}"]`);
+        if (el) el.style.display = 'none';
+    });
+
+    // Populate worker dashboard content
+    let user = currentUserProfile;
+    if (!user) {
+        // Fallback user: Pierre Dubois
+        user = users.find(u => u.id === 'cedbd55d-7fa3-47d9-8453-97cf81c4d756') || users[3];
+    }
+
+    const displayName = user ? `${user.firstname} ${user.lastname}` : 'Compagnon';
+    const welcomeTitle = document.getElementById('worker-welcome-title');
+    if (welcomeTitle) welcomeTitle.textContent = `Bonjour, ${displayName} !`;
+
+    // Find assigned chantier
+    let assignedChantier = null;
+    for (const chId in planningAllocations) {
+        if (planningAllocations[chId][user.id]) {
+            assignedChantier = chantiers.find(c => c.id === chId);
+            break;
+        }
+    }
+
+    // Populate Active Chantier Card
+    const chantierCard = document.getElementById('worker-active-chantier-card');
+    if (chantierCard) {
+        if (assignedChantier) {
+            chantierCard.innerHTML = `
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <span style="font-weight: 800; font-size: 16px; color: var(--text-primary);">${assignedChantier.name}</span>
+                    <span style="font-size: 12px; color: var(--gray-muted); text-transform: uppercase; font-weight: 700;">Client: ${assignedChantier.client || 'Client'}</span>
+                    <span style="font-size: 13px; color: var(--text-secondary);">📍 ${assignedChantier.address || 'Adresse non spécifiée'}</span>
+                    <span style="font-size: 11px; margin-top: 4px; font-weight: 700; color: ${assignedChantier.status === 'Ouvert' ? 'var(--green)' : '#ef4444'};">
+                        ● Chantier ${assignedChantier.status}
+                    </span>
+                </div>
+            `;
+        } else {
+            chantierCard.innerHTML = `<div class="empty-state">Aucun chantier affecté cette semaine</div>`;
+        }
+    }
+
+    // Populate Schedule details
+    const scheduleCard = document.getElementById('worker-schedule-details');
+    if (scheduleCard) {
+        const daysOfWeek = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
+        const allocation = assignedChantier ? planningAllocations[assignedChantier.id]?.[user.id] : null;
+        const assignedDays = allocation ? allocation.days : [];
+        const hoursText = allocation ? allocation.hours : '08:00 - 17:00';
+
+        if (assignedChantier && assignedDays.length > 0) {
+            scheduleCard.innerHTML = daysOfWeek.map((day, idx) => {
+                const isAssigned = assignedDays.includes(idx);
+                return `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #f1f5f9;">
+                        <span style="font-weight: 700; font-size: 13px; color: #475569;">${day}</span>
+                        <span style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; ${isAssigned ? 'background: #dcfce7; color: #15803d;' : 'background: #f1f5f9; color: #64748b;'}">
+                            ${isAssigned ? hoursText : 'Libre'}
+                        </span>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            scheduleCard.innerHTML = `<div class="empty-state">Aucun jour planifié cette semaine</div>`;
+        }
+    }
+
+    // Bind worker view hours modal trigger
+    const btnViewHours = document.getElementById('btn-worker-view-hours');
+    if (btnViewHours) {
+        // Clone and replace to prevent duplicate events on re-init
+        const newBtn = btnViewHours.cloneNode(true);
+        btnViewHours.parentNode.replaceChild(newBtn, btnViewHours);
+        
+        newBtn.addEventListener('click', () => {
+            const modal = document.getElementById('worker-hours-modal');
+            const listContainer = document.getElementById('worker-modal-hours-list');
+            const daysOfWeek = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
+
+            if (modal && listContainer) {
+                if (!assignedChantier) {
+                    listContainer.innerHTML = `<div class="empty-state">Aucun chantier affecté pour lister les heures</div>`;
+                } else {
+                    const userHours = hoursAllocations[assignedChantier.id]?.[user.id] || {};
+                    listContainer.innerHTML = daysOfWeek.map((day, idx) => {
+                        const val = userHours[idx] || '00:00';
+                        const hasHours = val !== '00:00' && val !== 'À compléter';
+                        return `
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; background: ${hasHours ? '#f0fdf4' : '#f8fafc'};">
+                                <span style="font-weight: 700; color: #334155; font-size: 13.5px;">${day}</span>
+                                <span style="font-weight: 800; color: ${hasHours ? '#16a34a' : '#64748b'}; font-size: 13.5px;">${val}</span>
+                            </div>
+                        `;
+                    }).join('');
+                }
+                modal.classList.add('show');
+            }
+        });
+    }
+
+    const btnCloseHours = document.getElementById('btn-close-worker-hours-modal');
+    if (btnCloseHours) {
+        btnCloseHours.addEventListener('click', () => {
+            const modal = document.getElementById('worker-hours-modal');
+            if (modal) modal.classList.remove('show');
+        });
+    }
+
+    // Toggle administrative project creation buttons
+    const btnCreateChantier = document.getElementById('btn-open-chantier-modal');
+    if (btnCreateChantier) {
+        btnCreateChantier.style.display = isAdmin ? '' : 'none';
+    }
+
+    const btnOpenDiff = document.getElementById('btn-open-diffusion-modal');
+    if (btnOpenDiff) {
+        btnOpenDiff.style.display = (isAdmin || isChef) ? '' : 'none';
+    }
+}
+
+// =============================================================================
+// DELEGATION & INTÉRIM LOGIC
+// =============================================================================
+
+function renderDelegations() {
+    const tbody = document.getElementById('delegations-table-tbody');
+    if (!tbody) return;
+
+    if (delegations.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align: center; color: var(--gray-muted); font-style: italic; padding: 20px;">Aucune délégation active ou planifiée.</td>
+            </tr>
+        `;
+        return;
+    }
+
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    tbody.innerHTML = delegations.map(del => {
+        const worker = users.find(u => u.id === del.worker_id);
+        const workerName = worker ? `${worker.firstname} ${worker.lastname}` : 'Compagnon inconnu';
+        
+        // Get multiple chantier names
+        let authorizedChantiers = [];
+        if (del.chantier_ids && Array.isArray(del.chantier_ids)) {
+            authorizedChantiers = del.chantier_ids.map(cId => {
+                const c = chantiers.find(proj => proj.id === cId);
+                return c ? c.name : 'Chantier inconnu';
+            });
+        } else if (del.chantier_id) {
+            const c = chantiers.find(proj => proj.id === del.chantier_id);
+            authorizedChantiers = [c ? c.name : 'Chantier inconnu'];
+        }
+        const chantiersListText = authorizedChantiers.join(', ');
+
+        let statusBadge = '<span class="badge badge-gray" style="background-color: #f1f5f9; color: #64748b; padding: 4px 8px; border-radius: 99px; font-size: 11px; font-weight: 700;">Planifié</span>';
+        if (todayStr >= del.start_date && todayStr <= del.end_date) {
+            statusBadge = '<span class="badge badge-success" style="background-color: #dcfce7; color: #15803d; padding: 4px 8px; border-radius: 99px; font-size: 11px; font-weight: 700;">Actif</span>';
+        } else if (todayStr > del.end_date) {
+            statusBadge = '<span class="badge badge-gray" style="background-color: #f1f5f9; color: #94a3b8; opacity: 0.6; padding: 4px 8px; border-radius: 99px; font-size: 11px; font-weight: 700;">Expiré</span>';
+        }
+
+        return `
+            <tr>
+                <td style="font-weight: 700; color: var(--text-primary); padding: 12px 16px;">${workerName}</td>
+                <td style="font-weight: 500; color: var(--text-secondary); padding: 12px 16px; max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${chantiersListText}">${chantiersListText}</td>
+                <td style="padding: 12px 16px;">${formatDateFr(del.start_date)}</td>
+                <td style="padding: 12px 16px;">${formatDateFr(del.end_date)}</td>
+                <td style="padding: 12px 16px;">${statusBadge}</td>
+                <td style="text-align: center; padding: 12px 16px;">
+                    <div style="display: flex; gap: 8px; justify-content: center;">
+                        <button class="btn-action" onclick="editDelegation('${del.id}')" title="Modifier" style="border: none; background: none; cursor: pointer; padding: 4px; display: inline-flex; align-items: center; justify-content: center;">
+                            <img src="edit.svg" alt="Modifier" style="width: 22px; height: 22px; filter: brightness(0) saturate(100%) invert(37%) sepia(93%) saturate(5437%) hue-rotate(239deg) brightness(96%) contrast(102%);">
+                        </button>
+                        <button class="btn-action text-danger" onclick="deleteDelegation('${del.id}')" title="Annuler la délégation" style="border: none; background: none; cursor: pointer; padding: 4px; display: inline-flex; align-items: center; justify-content: center;">
+                            <img src="bin.svg" alt="Supprimer" style="width: 22px; height: 22px; filter: brightness(0) saturate(100%) invert(27%) sepia(85%) saturate(5437%) hue-rotate(350deg) brightness(96%) contrast(102%);">
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function formatDateFr(dateStr) {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+
+function deleteDelegation(delId) {
+    if (confirm("Voulez-vous vraiment annuler cette délégation de droits ?")) {
+        delegations = delegations.filter(d => d.id !== delId);
+        localStorage.setItem('foreman_delegations', JSON.stringify(delegations));
+        
+        // Refresh UI
+        renderDelegations();
+        
+        // Reload page to re-evaluate active roles instantly
+        window.location.reload();
+    }
+}
+
+function editDelegation(delId) {
+    const del = delegations.find(d => d.id === delId);
+    if (!del) return;
+
+    // Reset Form first
+    const form = document.getElementById('delegation-form');
+    if (form) form.reset();
+
+    document.getElementById('edit-delegation-id').value = del.id;
+    
+    // Populate Worker select
+    const workerSelect = document.getElementById('delegation-worker-select');
+    if (workerSelect) {
+        const companions = users.filter(u => {
+            const role = (u.role || '').toLowerCase();
+            return !role.includes('chef') && !role.includes('admin') && !role.includes('conducteur') && !role.includes('propri');
+        });
+        workerSelect.innerHTML = '<option value="">Sélectionnez un ouvrier...</option>' + 
+            companions.map(u => `<option value="${u.id}" ${u.id === del.worker_id ? 'selected' : ''}>${u.firstname} ${u.lastname} (${u.role})</option>`).join('');
+    }
+
+    // Populate Chantiers checkboxes
+    const container = document.getElementById('delegation-chantiers-checkbox-list');
+    if (container) {
+        const selectedIds = del.chantier_ids || (del.chantier_id ? [del.chantier_id] : []);
+        container.innerHTML = chantiers.map(c => {
+            const isChecked = selectedIds.includes(c.id) ? 'checked' : '';
+            return `
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; color: var(--text-primary);">
+                    <input type="checkbox" name="delegation-chantiers" value="${c.id}" ${isChecked} style="accent-color: var(--accent);">
+                    <span>${c.name}</span>
+                </label>
+            `;
+        }).join('');
+    }
+
+    document.getElementById('delegation-start-date').value = del.start_date;
+    document.getElementById('delegation-end-date').value = del.end_date;
+
+    const modalTitle = document.querySelector('#delegation-modal .modal-title');
+    if (modalTitle) modalTitle.textContent = "Modifier la délégation de droits";
+
+    document.getElementById('delegation-modal').classList.add('show');
+}
+
+function initDelegationFeatures() {
+    const form = document.getElementById('delegation-form');
+    if (form) {
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const editId = document.getElementById('edit-delegation-id').value;
+            const workerId = document.getElementById('delegation-worker-select').value;
+            const startDate = document.getElementById('delegation-start-date').value;
+            const endDate = document.getElementById('delegation-end-date').value;
+
+            // Collect checkboxes values
+            const checkboxes = document.querySelectorAll('input[name="delegation-chantiers"]:checked');
+            const chantierIds = Array.from(checkboxes).map(cb => cb.value);
+
+            if (chantierIds.length === 0) {
+                alert("Veuillez sélectionner au moins un chantier !");
+                return;
+            }
+
+            if (startDate > endDate) {
+                alert("La date de début doit être antérieure ou égale à la date de fin !");
+                return;
+            }
+
+            if (editId) {
+                // Modify existing
+                const idx = delegations.findIndex(d => d.id === editId);
+                if (idx !== -1) {
+                    delegations[idx].worker_id = workerId;
+                    delegations[idx].chantier_ids = chantierIds;
+                    delegations[idx].start_date = startDate;
+                    delegations[idx].end_date = endDate;
+                    // Delete old single chantier_id field to clean data
+                    delete delegations[idx].chantier_id;
+                }
+            } else {
+                // Create new
+                const newDel = {
+                    id: 'del_' + Date.now(),
+                    worker_id: workerId,
+                    chantier_ids: chantierIds,
+                    start_date: startDate,
+                    end_date: endDate
+                };
+                delegations.push(newDel);
+            }
+
+            localStorage.setItem('foreman_delegations', JSON.stringify(delegations));
+            
+            // Close modal
+            document.getElementById('delegation-modal').classList.remove('show');
+            form.reset();
+
+            // Refresh UI
+            renderDelegations();
+            
+            // Reload page to apply roles instantly if the active worker was delegated
+            window.location.reload();
+        });
+    }
+
+    const btnOpen = document.getElementById('btn-open-delegation-modal');
+    if (btnOpen) {
+        btnOpen.addEventListener('click', () => {
+            document.getElementById('edit-delegation-id').value = '';
+            const modalTitle = document.querySelector('#delegation-modal .modal-title');
+            if (modalTitle) modalTitle.textContent = "Déléguer les droits de pointage";
+
+            const workerSelect = document.getElementById('delegation-worker-select');
+            if (workerSelect) {
+                const companions = users.filter(u => {
+                    const role = (u.role || '').toLowerCase();
+                    return !role.includes('chef') && !role.includes('admin') && !role.includes('conducteur') && !role.includes('propri');
+                });
+                workerSelect.innerHTML = '<option value="">Sélectionnez un ouvrier...</option>' + 
+                    companions.map(u => `<option value="${u.id}">${u.firstname} ${u.lastname} (${u.role})</option>`).join('');
+            }
+
+            const container = document.getElementById('delegation-chantiers-checkbox-list');
+            if (container) {
+                container.innerHTML = chantiers.map(c => `
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; color: var(--text-primary);">
+                        <input type="checkbox" name="delegation-chantiers" value="${c.id}" style="accent-color: var(--accent);">
+                        <span>${c.name}</span>
+                    </label>
+                `).join('');
+            }
+            
+            document.getElementById('delegation-modal').classList.add('show');
+        });
+    }
+
+    const btnClose = document.getElementById('btn-close-delegation-modal');
+    const btnCancel = document.getElementById('btn-cancel-delegation-modal');
+    [btnClose, btnCancel].forEach(btn => {
+        if (btn) {
+            btn.addEventListener('click', () => {
+                document.getElementById('delegation-modal').classList.remove('show');
+            });
+        }
+    });
+}
+
+// =============================================================================
+// PLANNING DIFFUSION LOGIC
+// =============================================================================
+
+function formatPhoneForWhatsApp(phoneStr) {
+    if (!phoneStr) return '';
+    let cleaned = phoneStr.replace(/\s+/g, '');
+    if (cleaned.startsWith('0')) {
+        cleaned = '+33' + cleaned.substring(1);
+    }
+    return cleaned;
+}
+
+function getWorkerWeeklyMessage(workerId, channel = 'whatsapp') {
+    const worker = users.find(u => u.id === workerId);
+    if (!worker) return '';
+
+    const daysOfWeek = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
+    const shortDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven'];
+
+    if (channel === 'sms') {
+        // Ultra-concise SMS format to avoid Twilio trial limits and save costs
+        let message = `Planning ${worker.firstname} :\n`;
+        let hasAnyAlloc = false;
+
+        daysOfWeek.forEach((day, dayIdx) => {
+            let assignedChantier = null;
+            let hoursRange = '08:00-17:00';
+            
+            for (const chId in planningAllocations) {
+                const alloc = planningAllocations[chId][workerId];
+                if (alloc && alloc.days.includes(dayIdx)) {
+                    assignedChantier = chantiers.find(c => c.id === chId);
+                    hoursRange = (alloc.hours || '08:00-17:00').replace(/\s+/g, '');
+                    break;
+                }
+            }
+
+            if (assignedChantier) {
+                hasAnyAlloc = true;
+                message += `${shortDays[dayIdx]}: ${assignedChantier.name} (${hoursRange})\n`;
+            }
+        });
+
+        if (!hasAnyAlloc) {
+            return `Aucun chantier planifie pour ${worker.firstname} cette semaine.`;
+        }
+
+        return message.trim();
+    }
+
+    let message = `👷 *BATIR - Votre planning de la semaine*\n\nBonjour ${worker.firstname}, voici vos affectations pour cette semaine :\n\n`;
+    let hasAnyAlloc = false;
+
+    daysOfWeek.forEach((day, dayIdx) => {
+        // Find if worker is assigned to any project on this day
+        let assignedChantier = null;
+        let hoursRange = '08:00 - 17:00';
+        
+        for (const chId in planningAllocations) {
+            const alloc = planningAllocations[chId][workerId];
+            if (alloc && alloc.days.includes(dayIdx)) {
+                assignedChantier = chantiers.find(c => c.id === chId);
+                hoursRange = alloc.hours || '08:00 - 17:00';
+                break;
+            }
+        }
+
+        if (assignedChantier) {
+            hasAnyAlloc = true;
+            // Find other companions assigned to this chantier on this day
+            const team = [];
+            const pAllocs = hoursAllocations[assignedChantier.id] || {};
+            for (const uId in pAllocs) {
+                if (uId !== workerId) {
+                    const u = users.find(usr => usr.id === uId);
+                    const alloc = planningAllocations[assignedChantier.id]?.[uId];
+                    if (u && alloc && alloc.days.includes(dayIdx)) {
+                        team.push(`${u.firstname} ${u.lastname}`);
+                    }
+                }
+            }
+            const teamText = team.length > 0 ? `\n👥 *Équipe* : ${team.join(', ')}` : '';
+            message += `📍 *${day}* : ${hoursRange}\n➡ ${assignedChantier.name}${teamText}\n\n`;
+        } else {
+            message += `📍 *${day}* : Repos / Libre\n\n`;
+        }
+    });
+
+    if (!hasAnyAlloc) {
+        return `👷 *BATIR - Votre planning de la semaine*\n\nBonjour ${worker.firstname}, aucun chantier ne vous a été affecté pour cette semaine.\n\nBonne semaine !`;
+    }
+
+    message += `Bonne semaine à vous !`;
+    return message;
+}
+
+function getGeneralPlanningLink() {
+    return `Planning General: ${window.location.origin}`;
+}
+
+function sendPersonalPlanning(workerId, phone) {
+    const text = getWorkerWeeklyMessage(workerId, 'whatsapp');
+    const encoded = encodeURIComponent(text);
+    const waPhone = formatPhoneForWhatsApp(phone);
+    const url = `https://wa.me/${waPhone}?text=${encoded}`;
+    window.open(url, '_blank');
+}
+
+function sendGeneralPlanning(phone) {
+    const text = `👷 *BATIR - Planning Général*\n\n` + getGeneralPlanningLink();
+    const encoded = encodeURIComponent(text);
+    const waPhone = formatPhoneForWhatsApp(phone);
+    const url = `https://wa.me/${waPhone}?text=${encoded}`;
+    window.open(url, '_blank');
+}
+
+function sendBothPlannings(workerId, phone) {
+    const personalText = getWorkerWeeklyMessage(workerId, 'whatsapp');
+    const generalText = getGeneralPlanningLink();
+    const combined = `${personalText}\n\n🌐 ${generalText}`;
+    const encoded = encodeURIComponent(combined);
+    const waPhone = formatPhoneForWhatsApp(phone);
+    const url = `https://wa.me/${waPhone}?text=${encoded}`;
+    window.open(url, '_blank');
+}
+
+async function updateWorkerPhone(userId, newPhone) {
+    // Update local users array
+    const userIndex = users.findIndex(u => u.id === userId);
+    if (userIndex !== -1) {
+        users[userIndex].phone = newPhone;
+    }
+
+    // Persist to Supabase if connected
+    if (useSupabase && supabaseClient) {
+        try {
+            const { error } = await supabaseClient
+                .from('utilisateurs')
+                .update({ phone: newPhone })
+                .eq('id', userId);
+            if (error) {
+                console.error("Erreur de mise à jour du téléphone sur Supabase:", error.message);
+            } else {
+                console.log(`Téléphone mis à jour avec succès pour l'utilisateur ${userId}`);
+            }
+        } catch (err) {
+            console.error("Exception lors de la mise à jour du téléphone:", err);
+        }
+    }
+}
+
+// --- Inline SVG helpers for Diffusion Modal ---
+const SVG_SPREAD = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-5.0 -10.0 110.0 135.0" width="26" height="26" fill="currentColor"><g><path d="m62.5 34.723h-20.832c-2.2969 0-4.168 1.8672-4.168 4.168v1.3906h-1.3906c-2.2969 0-4.168 1.8672-4.168 4.168v16.668c0 2.2969 1.8672 4.168 4.168 4.168h26.391c2.2969 0 4.1641-1.8711 4.1641-4.168v-22.223c0-2.2969-1.8672-4.168-4.168-4.168zm-26.391 27.777c-0.76562 0-1.3906-0.625-1.3906-1.3906v-16.668c0-0.76562 0.62109-1.3906 1.3906-1.3906h20.832c0.76562 0 1.3906 0.625 1.3906 1.3906v16.668c0 0.48828 0.085938 0.95312 0.23828 1.3906zm27.781-1.3906c0 0.76562-0.62109 1.3906-1.3906 1.3906-0.76562 0-1.3906-0.625-1.3906-1.3906v-16.668c0-2.2969-1.8672-4.168-4.168-4.168h-16.668v-1.3906c0-0.76562 0.62109-1.3906 1.3906-1.3906h20.832c0.76562 0 1.3906 0.625 1.3906 1.3906v22.223z"/><path d="m54.168 47.223h-9.7227c-0.76953 0-1.3906 0.62109-1.3906 1.3906 0 0.76562 0.62109 1.3906 1.3906 1.3906h9.7227c0.76953 0 1.3906-0.62109 1.3906-1.3906 0-0.76562-0.62109-1.3906-1.3906-1.3906z"/><path d="m54.168 51.391h-15.277c-0.76953 0-1.3906 0.62109-1.3906 1.3906 0 0.76562 0.62109 1.3906 1.3906 1.3906h15.277c0.76953 0 1.3906-0.62109 1.3906-1.3906 0-0.76562-0.62109-1.3906-1.3906-1.3906z"/><path d="m54.168 55.555h-15.277c-0.76953 0-1.3906 0.62109-1.3906 1.3906 0 0.76563 0.62109 1.3906 1.3906 1.3906h15.277c0.76953 0 1.3906-0.62109 1.3906-1.3906 0-0.76562-0.62109-1.3906-1.3906-1.3906z"/><path d="m88.891 81.945c-1.4141 0-2.7266 0.42969-3.8242 1.1562l-13.516-13.516c1.9727-2.168 3.6211-4.6289 4.875-7.3164l5.5938 2.2734c-0.03125 0.24219-0.074219 0.48438-0.074219 0.73438 0 3.0625 2.4922 5.5547 5.5547 5.5547s5.5547-2.4922 5.5547-5.5547-2.4922-5.5547-5.5547-5.5547c-1.8203 0-3.4219 0.89062-4.4375 2.2461l-5.5898-2.2695c1.0781-3.0391 1.6914-6.2969 1.6914-9.6992 0-4.0508-0.83203-7.9062-2.332-11.414l9.2227-4.457c1.0195 1.2031 2.5234 1.9805 4.2188 1.9805 3.0625 0 5.5547-2.4922 5.5547-5.5547s-2.4922-5.5547-5.5547-5.5547-5.5547 2.4922-5.5547 5.5547c0 0.37109 0.039062 0.73047 0.10938 1.082l-9.207 4.4453c-1.9648-3.6055-4.6875-6.7305-7.9258-9.2148l4.5703-6.6016c0.83984 0.35938 1.7617 0.5625 2.7305 0.5625 3.8281 0 6.9453-3.1172 6.9453-6.9453 0-3.8281-3.1172-6.9453-6.9453-6.9453s-6.9453 3.1172-6.9453 6.9453c0 1.8594 0.74219 3.5391 1.9375 4.7891l-4.5742 6.6094c-4.4805-2.8047-9.7539-4.4531-15.418-4.4531-7.543 0-14.402 2.9023-19.586 7.6172l-11.129-11.129c0.97266-1.3633 1.5469-3.0234 1.5469-4.8203 0-4.5938-3.7383-8.332-8.332-8.332s-8.332 3.7383-8.332 8.332 3.7383 8.332 8.332 8.332c1.7969 0 3.457-0.57812 4.8203-1.5469l11.129 11.129c-4.7148 5.1836-7.6172 12.043-7.6172 19.586 0 6.707 2.2969 12.871 6.1172 17.805l-9.0977 7.7617c-1.4492-1.2188-3.3164-1.9531-5.3516-1.9531-4.5938 0-8.332 3.7383-8.332 8.332s3.7383 8.332 8.332 8.332 8.332-3.7383 8.332-8.332c0-1.5586-0.4375-3.0117-1.1836-4.2578l9.1055-7.7656c5.3242 5.6758 12.867 9.25 21.246 9.25 7.543 0 14.402-2.9023 19.586-7.6172l13.516 13.516c-0.72656 1.0977-1.1562 2.4102-1.1562 3.8242 0 3.8281 3.1172 6.9453 6.9453 6.9453s6.9453-3.1172 6.9453-6.9453-3.1172-6.9453-6.9453-6.9453zm-1.3906-19.445c1.5312 0 2.7773 1.2461 2.7773 2.7773s-1.2461 2.7773-2.7773 2.7773-2.7773-1.2461-2.7773-2.7773c0-0.35547 0.074219-0.69531 0.19531-1.0117 0.003906-0.011719 0.015625-0.023437 0.019531-0.035156 0.007812-0.015625 0.003906-0.035157 0.007812-0.050781 0.42578-0.98828 1.4102-1.6797 2.5508-1.6797zm2.7773-34.723c1.5312 0 2.7773 1.2461 2.7773 2.7773s-1.2461 2.7773-2.7773 2.7773-2.7773-1.2461-2.7773-2.7773 1.2461-2.7773 2.7773-2.7773zm-15.277-18.055c2.2969 0 4.168 1.8672 4.168 4.168 0 2.2969-1.8672 4.168-4.168 4.168-2.2969 0-4.168-1.8672-4.168-4.168 0-2.2969 1.8672-4.168 4.168-4.168zm-62.5 77.777c-3.0625 0-5.5547-2.4922-5.5547-5.5547s2.4922-5.5547 5.5547-5.5547 5.5547 2.4922 5.5547 5.5547-2.4922 5.5547-5.5547 5.5547zm-5.5547-75c0-3.0625 2.4922-5.5547 5.5547-5.5547s5.5547 2.4922 5.5547 5.5547-2.4922 5.5547-5.5547 5.5547-5.5547-2.4922-5.5547-5.5547zm16.664 37.5c0-14.551 11.84-26.391 26.391-26.391s26.391 11.84 26.391 26.391-11.84 26.391-26.391 26.391-26.391-11.84-26.391-26.391zm65.281 43.055c-2.2969 0-4.168-1.8672-4.168-4.168 0-2.2969 1.8672-4.168 4.168-4.168 2.2969 0 4.168 1.8672 4.168 4.168 0 2.2969-1.8672 4.168-4.168 4.168z"/></g></svg>`;
+const SVG_WHATSAPP = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-5.0 -10.0 110.0 135.0" width="26" height="26" fill="currentColor"><path d="m33.379 79.781c5.0781 2.8008 10.801 4.2695 16.621 4.2695 19.02 0 34.5-15.48 34.5-34.5s-15.48-34.5-34.5-34.5-34.5 15.48-34.5 34.5c0 6.1094 1.6094 12.09 4.6797 17.352l-4.3906 18.051zm1.832-46.352c0.73047-0.67188 1.6797-1.0312 2.6719-1.0312h1.0508c1.3906 0 2.6289 0.87109 3.1016 2.1719l2.1484 5.9219c0.19922 0.55859 0.10156 1.1797-0.26953 1.6484l-1.6992 2.1211c-0.67188 0.82812-0.85156 1.9609-0.46094 2.9492 2.0586 5.1797 8.1797 8.8203 11.379 10.422 1.1602 0.57813 2.5508 0.35938 3.4688-0.55078l1.8789-1.8789c0.44922-0.44922 1.1211-0.60938 1.7305-0.42188l5.6992 1.8203c1.3711 0.44141 2.3008 1.7109 2.3008 3.1484v1.4492c0 1.0586-0.42188 2.0781-1.1719 2.8281-5.5508 5.4805-14.762 1.4609-20.73-2.1992-4.3008-2.6406-8.0508-6.1094-10.84-10.32-6.75-10.188-2.6484-15.898-0.25781-18.078z"/></svg>`;
+const SVG_PHONE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-5.0 -10.0 110.0 135.0" width="26" height="26" fill="currentColor"><path d="m33 7c-4.4141 0-8 3.5859-8 8v70c0 4.4141 3.5859 8 8 8h34c4.4141 0 8-3.5859 8-8v-70c0-4.4141-3.5859-8-8-8zm0 2h34c3.3398 0 6 2.6602 6 6v2h-46v-2c0-3.3398 2.6602-6 6-6zm-6 10h46v58h-46zm0 60h46v6c0 3.3398-2.6602 6-6 6h-34c-3.3398 0-6-2.6602-6-6zm23 4c-1.1055 0-2 0.89453-2 2s0.89453 2 2 2 2-0.89453 2-2-0.89453-2-2-2z"/></svg>`;
+const SVG_MEN = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-5.0 -10.0 110.0 135.0" width="26" height="26" fill="currentColor"><path d="m60 26c3.3125 0 6 2.6875 6 6v24c0 1.6562-1.3438 3-3 3s-3-1.3438-3-3v-21.746c0-0.55469-0.44922-1.0039-1.0039-1.0039-0.55078 0-1 0.44531-1.0039 0.99609l-0.46094 51.52c-0.019531 1.7891-1.4766 3.2344-3.2656 3.2344-1.8047 0-3.2656-1.4609-3.2656-3.2656v-29.105c0-0.625-0.50391-1.1289-1.1289-1.1289-0.62109 0-1.125 0.5-1.1289 1.1211l-0.21484 28.891c-0.015625 1.9297-1.5859 3.4883-3.5156 3.4883-1.9375 0-3.5117-1.5742-3.5117-3.5117v-51.238c0-0.55078-0.44922-1-1-1s-1 0.44922-1 1v22c0 1.5195-1.2305 2.75-2.75 2.75s-2.75-1.2305-2.75-2.75v-24.25c0-3.3125 2.6875-6 6-6zm-9.5-15c3.5898 0 6.5 2.9102 6.5 6.5s-2.9102 6.5-6.5 6.5-6.5-2.9102-6.5-6.5 2.9102-6.5 6.5-6.5z"/></svg>`;
+const SVG_MENS = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-5.0 -10.0 110.0 135.0" width="26" height="26" fill="currentColor"><path d="m26.594 41.266c-1.3906-1.3906-3.2812-2.1562-5.2344-2.1406l-4.0469 0.046875c-1.9062 0.015625-3.7188 0.78125-5.0781 2.125l-5.7812 5.7812c-0.82812 0.82812-0.82812 2.1719 0 3 0.40625 0.40625 0.95312 0.625 1.5 0.625s1.0938-0.20312 1.5-0.625l5.0469-5.0469v13.406l-2.6562 10.641c-0.046875 0.17188-0.0625 0.34375-0.0625 0.51562 0 0.95312 0.64062 1.8125 1.6094 2.0625 1.1406 0.28125 2.2812-0.40625 2.5625-1.5469l2.9062-11.672 0.53125-2.1406v-0.046875h0.015625v0.03125l0.53125 2.1406 2.8594 11.453c0.28125 1.1406 1.4219 1.8125 2.5625 1.5469 0.96875-0.23438 1.6094-1.1094 1.6094-2.0625 0-0.15625-0.015625-0.34375-0.0625-0.51562l-2.6406-10.562v-13.359l5.0469 5.0469c0.40625 0.40625 0.95312 0.625 1.5 0.625s1.0781-0.20312 1.5-0.625c0.82812-0.82812 0.82812-2.1719 0-3z"/><path d="m24.266 32.422c0 6.5-9.75 6.5-9.75 0s9.75-6.5 9.75 0z"/><path d="m57.375 41.844c-1.3906-1.3906-3.2812-2.1562-5.2344-2.1406l-4.0469 0.046875c-1.9062 0.015625-3.7188 0.78125-5.0781 2.125l-5.7812 5.7812c-0.82812 0.82812-0.82812 2.1719 0 3 0.40625 0.40625 0.95312 0.625 1.5 0.625s1.0938-0.20312 1.5-0.625l5.0469-5.0469v13.406l-2.6562 10.641c-0.046875 0.17188-0.0625 0.34375-0.0625 0.51562 0 0.95312 0.64062 1.8125 1.6094 2.0625 1.1406 0.28125 2.2812-0.40625 2.5625-1.5469l2.9062-11.672 0.53125-2.1406-0.015625-0.046875h0.015625v0.03125l0.53125 2.1406 2.8594 11.453c0.28125 1.1406 1.4219 1.8125 2.5625 1.5469 0.96875-0.23438 1.6094-1.1094 1.6094-2.0625 0-0.15625-0.015625-0.34375-0.0625-0.51562l-2.6406-10.562v-13.359l5.0469 5.0469c0.40625 0.40625 0.95312 0.625 1.5 0.625s1.0781-0.20312 1.5-0.625c0.82812-0.82812 0.82812-2.1719 0-3z"/><path d="m55.047 32.984c0 6.5-9.75 6.5-9.75 0s9.75-6.5 9.75 0z"/><path d="m93.531 47.719-5.7031-5.7031c-1.3906-1.3906-3.2812-2.1562-5.2344-2.1406l-4.0469 0.046875c-1.9062 0.015625-3.7188 0.78125-5.0781 2.125l-5.7812 5.7812c-0.82812 0.82812-0.82812 2.1719 0 3 0.40625 0.40625 0.95312 0.625 1.5 0.625s1.0938-0.20312 1.5-0.625l5.0469-5.0469v13.406l-2.6562 10.641c-0.046875 0.17188-0.0625 0.34375-0.0625 0.51562 0 0.95312 0.64062 1.8125 1.6094 2.0625 1.1406 0.28125 2.2812-0.40625 2.5625-1.5469l2.9062-11.672 0.53125-2.1406-0.015625-0.046875h0.015625v0.03125l0.53125 2.1406 2.8594 11.453c0.28125 1.1406 1.4219 1.8125 2.5625 1.5469 0.96875-0.23438 1.6094-1.1094 1.6094-2.0625 0-0.15625-0.015625-0.34375-0.0625-0.51562l-2.6406-10.562v-13.359l5.0469 5.0469c0.40625 0.40625 0.95312 0.625 1.5 0.625s1.0781-0.20312 1.5-0.625c0.82812-0.82812 0.82812-2.1719 0-3z"/><path d="m85.484 33.172c0 6.5-9.75 6.5-9.75 0s9.75-6.5 9.75 0z"/></svg>`;
+
+function renderDiffusionModal() {
+    const tbody = document.getElementById('diffusion-table-tbody');
+    if (!tbody) return;
+
+    // Get active channel selection
+    const checkedRadio = document.querySelector('input[name="diffusion-channel"]:checked');
+    const channel = checkedRadio ? checkedRadio.value : 'whatsapp';
+
+    // Toggle bulk button visibility based on channel
+    const btnBulkSMS = document.getElementById('btn-send-bulk-sms');
+    if (btnBulkSMS) {
+        btnBulkSMS.style.display = (channel === 'sms') ? '' : 'none';
+    }
+
+    // We filter users to only show companions/workers (ouvriers)
+    const companions = users.filter(u => {
+        const role = (u.role || '').toLowerCase();
+        return !role.includes('chef') && !role.includes('admin') && !role.includes('conducteur') && !role.includes('propri');
+    });
+
+    if (companions.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="3" style="text-align: center; color: var(--gray-muted); padding: 20px;">Aucun ouvrier enregistré.</td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = companions.map(u => {
+        const phone = u.phone || '';
+        
+        let actionButtonsHtml = '';
+        if (channel === 'whatsapp') {
+            actionButtonsHtml = `
+                <button class="btn btn-secondary" onclick="sendPersonalPlanning('${u.id}', '${phone}')" style="padding: 6px 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+                    ${SVG_MEN} Perso
+                </button>
+                <button class="btn btn-secondary" onclick="sendGeneralPlanning('${phone}')" style="padding: 6px 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+                    ${SVG_MENS} Général
+                </button>
+                <button class="btn btn-primary" onclick="sendBothPlannings('${u.id}', '${phone}')" style="padding: 6px 12px; font-size: 11px; background: var(--accent); display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+                    ${SVG_SPREAD} Les deux
+                </button>
+            `;
+        } else {
+            // SMS buttons
+            actionButtonsHtml = `
+                <button class="btn btn-secondary" onclick="sendSingleSMSViaBackend('${u.id}', '${phone}', 'perso')" style="padding: 6px 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+                    ${SVG_MEN} SMS Perso
+                </button>
+                <button class="btn btn-secondary" onclick="sendSingleSMSViaBackend('${u.id}', '${phone}', 'general')" style="padding: 6px 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+                    ${SVG_MENS} SMS Général
+                </button>
+                <button class="btn btn-primary" onclick="sendSingleSMSViaBackend('${u.id}', '${phone}', 'both')" style="padding: 6px 12px; font-size: 11px; background: var(--primary); display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+                    ${SVG_SPREAD} SMS Les deux
+                </button>
+            `;
+        }
+
+        return `
+            <tr>
+                <td style="font-weight: 700; color: var(--text-primary); padding: 12px 16px;">${u.firstname} ${u.lastname}</td>
+                <td style="padding: 8px 16px;">
+                    <input type="text" class="phone-edit-input" data-user-id="${u.id}" value="${phone}" placeholder="Non renseigné" style="width: 100%; max-width: 160px; padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px; font-weight: 500; transition: background-color 0.3s ease;">
+                </td>
+                <td style="text-align: center; padding: 12px 16px;">
+                    <div style="display: flex; gap: 8px; justify-content: center;">
+                        ${actionButtonsHtml}
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    // Bind change listeners to inline phone inputs
+    const phoneInputs = tbody.querySelectorAll('.phone-edit-input');
+    phoneInputs.forEach(input => {
+        input.addEventListener('change', async (e) => {
+            const userId = e.target.getAttribute('data-user-id');
+            const newPhone = e.target.value.trim();
+            
+            // Visual feedback - yellow background while updating
+            e.target.style.backgroundColor = '#fef08a';
+            
+            await updateWorkerPhone(userId, newPhone);
+            
+            // Visual feedback - light green background on success
+            e.target.style.backgroundColor = '#dcfce7';
+            setTimeout(() => {
+                e.target.style.backgroundColor = '';
+            }, 1000);
+        });
+    });
+}
+
+async function sendSingleSMSViaBackend(workerId, phone, mode) {
+    if (!phone) {
+        alert("Cet ouvrier n'a pas de numéro de téléphone !");
+        return;
+    }
+    
+    let text = '';
+    if (mode === 'perso') {
+        text = getWorkerWeeklyMessage(workerId, 'sms');
+    } else if (mode === 'general') {
+        text = `👷 *BATIR - Planning Général*\n\n` + getGeneralPlanningLink();
+    } else {
+        text = getWorkerWeeklyMessage(workerId, 'sms') + `\n\n🌐 ` + getGeneralPlanningLink();
+    }
+
+    if (!confirm(`Envoyer ce SMS à ${phone} ?`)) return;
+
+    try {
+        const response = await fetch('/api/send-sms-bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                messages: [{
+                    to: formatPhoneForWhatsApp(phone),
+                    text: text
+                }]
+            })
+        });
+
+        const result = await response.json();
+        if (result.success && result.results[0].success) {
+            alert("SMS envoyé avec succès !");
+        } else {
+            alert("Erreur lors de l'envoi : " + (result.error || result.results[0].error));
+        }
+    } catch (err) {
+        alert("Erreur réseau : " + err.message);
+    }
+}
+
+function initDiffusionFeatures() {
+    const btnOpen = document.getElementById('btn-open-diffusion-modal');
+    if (btnOpen) {
+        // Toggle display based on permissions (only visible for Admin & Chef)
+        btnOpen.style.display = (isAdmin || isChef) ? 'inline-flex' : 'none';
+
+        btnOpen.addEventListener('click', () => {
+            console.log("Diffuser planning button clicked");
+            const modal = document.getElementById('diffusion-modal');
+            console.log("Modal element found:", modal);
+            renderDiffusionModal();
+            if (modal) {
+                modal.classList.add('show');
+                console.log("Added 'show' class to modal. Current class list:", modal.className);
+            } else {
+                console.error("Error: Modal '#diffusion-modal' not found in DOM!");
+            }
+        });
+    }
+
+    // Bind change listeners to channel radios
+    const radios = document.querySelectorAll('input[name="diffusion-channel"]');
+    radios.forEach(radio => {
+        radio.addEventListener('change', () => {
+            renderDiffusionModal();
+        });
+    });
+
+    const btnBulkSMS = document.getElementById('btn-send-bulk-sms');
+    if (btnBulkSMS) {
+        btnBulkSMS.addEventListener('click', async () => {
+            const companions = users.filter(u => {
+                const role = (u.role || '').toLowerCase();
+                return !role.includes('chef') && !role.includes('admin') && !role.includes('conducteur') && !role.includes('propri');
+            });
+
+            const messages = [];
+            companions.forEach(u => {
+                if (u.phone) {
+                    const text = getWorkerWeeklyMessage(u.id, 'sms') + `\n\n🌐 ` + getGeneralPlanningLink();
+                    messages.push({
+                        to: formatPhoneForWhatsApp(u.phone),
+                        text: text
+                    });
+                }
+            });
+
+            if (messages.length === 0) {
+                alert("Aucun ouvrier n'a de numéro de téléphone renseigné !");
+                return;
+            }
+
+            if (!confirm(`Voulez-vous vraiment envoyer le planning par SMS aux ${messages.length} ouvriers ?`)) {
+                return;
+            }
+
+            btnBulkSMS.disabled = true;
+            btnBulkSMS.textContent = "Envoi en cours...";
+
+            try {
+                const response = await fetch('/api/send-sms-bulk', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ messages })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    const successfulCount = result.results.filter(r => r.success).length;
+                    alert(`Succès : ${successfulCount} / ${result.results.length} SMS envoyés avec succès !`);
+                } else {
+                    alert("Erreur lors de l'envoi : " + result.error);
+                }
+            } catch (err) {
+                alert("Erreur réseau ou serveur : " + err.message);
+            } finally {
+                btnBulkSMS.disabled = false;
+                btnBulkSMS.textContent = "🚀 Tout envoyer par SMS";
+            }
+        });
+    }
+
+    const btnClose = document.getElementById('btn-close-diffusion-modal');
+    const btnCancel = document.getElementById('btn-cancel-diffusion-modal');
+    [btnClose, btnCancel].forEach(btn => {
+        if (btn) {
+            btn.addEventListener('click', () => {
+                const modal = document.getElementById('diffusion-modal');
+                if (modal) modal.classList.remove('show');
+            });
+        }
+    });
+}
+
+// Bind to window for global inline onclick callbacks access
+window.sendPersonalPlanning = sendPersonalPlanning;
+window.sendGeneralPlanning = sendGeneralPlanning;
+window.sendBothPlannings = sendBothPlannings;
+window.sendSingleSMSViaBackend = sendSingleSMSViaBackend;
+
+function initImageUploaders() {
+    document.querySelectorAll('.image-uploader').forEach(uploader => {
+        const fileInput = uploader.querySelector('.image-uploader-input');
+        if (!fileInput) return;
+
+        const btn = uploader.querySelector('.btn-uploader-file');
+        if (btn) {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                fileInput.click();
+            });
+        }
+
+        uploader.addEventListener('click', (e) => {
+            if (e.target !== fileInput && e.target !== btn) {
+                fileInput.click();
+            }
+        });
+
+        // Prevent default drag behaviors
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploader.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            }, false);
+        });
+
+        uploader.addEventListener('dragover', () => {
+            uploader.classList.add('dragover');
+            uploader.style.borderColor = 'var(--primary)';
+            uploader.style.backgroundColor = 'var(--primary-light)';
+        });
+
+        uploader.addEventListener('dragleave', () => {
+            uploader.classList.remove('dragover');
+            uploader.style.borderColor = '';
+            uploader.style.backgroundColor = '';
+        });
+
+        uploader.addEventListener('drop', (e) => {
+            uploader.classList.remove('dragover');
+            uploader.style.borderColor = '';
+            uploader.style.backgroundColor = '';
+            
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                fileInput.dispatchEvent(new Event('change'));
+            }
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        uploader.setAttribute('data-image-base64', e.target.result);
+                        
+                        let previewImg = uploader.querySelector('.uploader-preview-img');
+                        if (!previewImg) {
+                            previewImg = document.createElement('img');
+                            previewImg.className = 'uploader-preview-img';
+                            previewImg.style.position = 'absolute';
+                            previewImg.style.top = '0';
+                            previewImg.style.left = '0';
+                            previewImg.style.width = '100%';
+                            previewImg.style.height = '100%';
+                            previewImg.style.objectFit = 'cover';
+                            previewImg.style.borderRadius = '8px';
+                            uploader.style.position = 'relative';
+                            uploader.appendChild(previewImg);
+                        }
+                        previewImg.src = e.target.result;
+                        previewImg.style.display = 'block';
+                        
+                        uploader.querySelectorAll(':not(.uploader-preview-img):not(.image-uploader-input)').forEach(child => {
+                            child.style.opacity = '0';
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    alert("Veuillez sélectionner un fichier image.");
+                }
+            }
+        });
+    });
+}
+
+// Run uploader initialization
+initImageUploaders();
+
+// --- Onboarding Logic ---
+function populateEntreprisesSelects() {
+    const selects = [
+        document.getElementById('chantier-entreprise'),
+        document.getElementById('edit-chantier-entreprise')
+    ];
+    
+    selects.forEach(select => {
+        if (!select) return;
+        select.innerHTML = '<option value="">Sélectionnez une entreprise</option>';
+        entreprises.forEach(ent => {
+            const opt = document.createElement('option');
+            opt.value = ent.name;
+            opt.textContent = ent.name;
+            select.appendChild(opt);
+        });
+    });
+}
+
+function initOnboarding() {
+    const modal = document.getElementById('onboarding-modal');
+    if (!modal) return;
+    
+    if (entreprises.length > 0) {
+        modal.style.display = 'none';
+        return;
+    }
+
+    modal.style.display = 'block';
+
+    const inputName = document.getElementById('onboarding-entreprise-name');
+    const btnAdd = document.getElementById('btn-add-onboarding-entreprise');
+    const tbody = document.getElementById('onboarding-entreprises-list');
+    const btnFinish = document.getElementById('btn-finish-onboarding');
+    const errorMsg = document.getElementById('onboarding-error-msg');
+
+    let localEntreprises = [];
+
+    const renderLocalList = () => {
+        tbody.innerHTML = localEntreprises.map((name, i) => `
+            <tr>
+                <td style="font-weight: 500;">${name}</td>
+                <td style="text-align: right; width: 60px;">
+                    <button class="btn-action" onclick="window.removeOnboardingEntreprise(${i})">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+
+        if (localEntreprises.length > 0) {
+            btnFinish.disabled = false;
+        } else {
+            btnFinish.disabled = true;
+        }
+    };
+
+    window.removeOnboardingEntreprise = (index) => {
+        localEntreprises.splice(index, 1);
+        renderLocalList();
+    };
+
+    btnAdd.addEventListener('click', () => {
+        const name = inputName.value.trim();
+        if (!name) {
+            errorMsg.textContent = "Le nom ne peut pas être vide.";
+            errorMsg.style.display = 'block';
+            return;
+        }
+        if (localEntreprises.includes(name)) {
+            errorMsg.textContent = "Cette entreprise a déjà été ajoutée.";
+            errorMsg.style.display = 'block';
+            return;
+        }
+        errorMsg.style.display = 'none';
+        localEntreprises.push(name);
+        inputName.value = '';
+        renderLocalList();
+    });
+
+    btnFinish.addEventListener('click', async () => {
+        btnFinish.disabled = true;
+        btnFinish.textContent = "Enregistrement...";
+        
+        try {
+            const inserts = localEntreprises.map(name => ({
+                id: 'e_' + Date.now() + Math.random().toString(36).substr(2, 5),
+                name: name
+            }));
+            
+            const { error } = await supabaseClient.from('entreprises').insert(inserts);
+            if (error) throw error;
+            
+            entreprises = inserts; // Update global
+            populateEntreprisesSelects();
+            modal.style.display = 'none';
+            await supabaseClient.from('dashboard_activities').insert([{ activity_text: 'Configuration initiale terminée.' }]);
+            renderDashboard();
+        } catch (err) {
+            console.error("Erreur lors de l'onboarding:", err);
+            errorMsg.textContent = "Une erreur est survenue lors de l'enregistrement.";
+            errorMsg.style.display = 'block';
+            btnFinish.disabled = false;
+            btnFinish.textContent = "Terminer et accéder à l'application";
+        }
+    });
+}

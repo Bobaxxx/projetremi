@@ -987,9 +987,20 @@ body {
     border-radius: 12px;
     width: 500px;
     max-width: 90vw;
+    max-height: 90vh;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     transform: scale(0.95);
     transition: transform 0.3s ease;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
     overflow: hidden;
 }
 
@@ -1003,6 +1014,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-shrink: 0;
 }
 
 .modal-title {
@@ -1029,15 +1041,26 @@ body {
     display: flex;
     flex-direction: column;
     gap: 16px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.modal-body-scroll {
+    overflow-y: auto;
+    padding: 24px;
+    flex: 1;
+    min-height: 0;
 }
 
 .modal-footer {
     padding: 16px 24px;
-    background-color: #f9fafb;
+    background-color: #ffffff;
     border-top: 1px solid var(--border-color);
     display: flex;
     justify-content: flex-end;
+    align-items: center;
     gap: 12px;
+    flex-shrink: 0;
 }
 
 .form-group {
@@ -2270,8 +2293,8 @@ td:hover .planning-add-btn {
     }
 
     .dashboard-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 12px !important;
+        grid-template-columns: 1fr !important;
+        gap: 14px !important;
     }
     
     .dashboard-layout-columns {
@@ -2474,9 +2497,11 @@ td:hover .planning-add-btn {
         gap: 10px !important;
     }
 
-    /* Filters row: stack selects vertically */
+    /* Filters row: place selects side-by-side on mobile */
     .hours-filters-row {
-        flex-direction: column !important;
+        flex-direction: row !important;
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
         gap: 8px !important;
         width: 100% !important;
     }
@@ -2484,6 +2509,9 @@ td:hover .planning-add-btn {
     .hours-filter-select {
         min-width: 0 !important;
         width: 100% !important;
+        padding: 8px 12px !important;
+        font-size: 12.5px !important;
+        height: 38px !important;
     }
 
     /* Table scroll container: constrained to viewport */
@@ -2504,16 +2532,21 @@ td:hover .planning-add-btn {
 
     /* The selects group inside filter bar */
     .planning-filter-bar > div:first-child {
-        flex-direction: column !important;
+        flex-direction: row !important;
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
         width: 100% !important;
         gap: 8px !important;
     }
 
-    /* Remove fixed min-width from planning selects */
+    /* Remove fixed min-width and shrink planning selects */
     #planning-chantier-filter,
     #planning-status-filter {
         min-width: 0 !important;
         width: 100% !important;
+        padding: 8px 12px !important;
+        font-size: 12.5px !important;
+        height: 38px !important;
     }
 
     /* View mode buttons group: full width, centered */
@@ -2634,5 +2667,226 @@ td:hover .planning-add-btn {
 
     .footer-logo {
         height: 24px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .planning-grid-wrapper {
+        display: none !important;
+    }
+    #mobile-planning-list-view {
+        display: flex !important;
+        flex-direction: column;
+        gap: 1px; /* Tightly pack cards */
+    }
+}
+
+/* Mobile planning list view specific card styles */
+.mobile-planning-day-header {
+    background-color: #ff5722; /* Clean coral orange matching screen */
+    color: white;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: lowercase;
+    border-radius: 0;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    margin-top: 10px;
+}
+
+.mobile-planning-day-header:first-of-type {
+    margin-top: 0;
+}
+
+.mobile-planning-card {
+    background-color: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-top: none;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.mobile-planning-card-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.mobile-planning-card-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+    text-transform: uppercase;
+}
+
+.mobile-planning-card-hours {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+@media (max-width: 768px) {
+    .hours-table-scroll-wrapper {
+        display: none !important;
+    }
+    #mobile-hours-list-view {
+        display: flex !important;
+        flex-direction: column;
+        gap: 1px;
+    }
+}
+
+.hour-cell-value {
+    font-weight: 700;
+    color: var(--text-secondary);
+    font-size: 13.5px;
+}
+
+.text-to-complete {
+    color: var(--accent);
+    font-style: italic;
+}
+
+/* Info-icon SVGs : violet du site */
+.info-icon {
+    color: var(--primary);
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* Responsive adjustments for Chantier Form Modals on Mobile & Tablet */
+@media (max-width: 900px) {
+    .modal.modal-large {
+        width: 100% !important;
+        max-width: 95vw !important;
+        max-height: 92vh !important;
+        margin: 10px auto !important;
+        overflow-x: hidden !important;
+    }
+
+    .modal-body-scroll {
+        padding: 16px !important;
+        overflow-x: hidden !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .chantier-form-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+        width: 100% !important;
+        overflow-x: hidden !important;
+    }
+
+    .chantier-form-left, .chantier-form-right {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .chantier-form-left {
+        border-right: none !important;
+        border-bottom: 1px solid var(--border-color) !important;
+        padding-right: 0 !important;
+        padding-bottom: 20px !important;
+    }
+
+    .form-row, .form-row-3, .form-row-5 {
+        display: flex !important;
+        flex-direction: column !important;
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+        width: 100% !important;
+    }
+
+    .form-row .form-group, .form-row-3 .form-group, .form-row-5 .form-group {
+        width: 100% !important;
+        flex: none !important;
+        max-width: 100% !important;
+    }
+
+    .form-input, .form-select, .form-textarea, input, select, textarea {
+        max-width: 100% !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .color-palette-picker {
+        grid-template-columns: repeat(auto-fill, minmax(28px, 1fr)) !important;
+    }
+
+    .modal-footer {
+        padding: 14px 16px !important;
+    }
+
+    /* Dashboard Admin & Chef page responsive fixes */
+    .content-pane {
+        padding: 12px !important;
+        overflow-x: hidden !important;
+        max-width: 100vw !important;
+        box-sizing: border-box !important;
+    }
+
+    #tab-dashboard,
+    #admin-dashboard-view {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+        box-sizing: border-box !important;
+    }
+
+    .dashboard-grid {
+        grid-template-columns: 1fr !important;
+        gap: 14px !important;
+        margin-bottom: 20px !important;
+    }
+
+    .dashboard-card {
+        padding: 16px !important;
+        height: auto !important;
+        min-height: 120px !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
+    }
+
+    .card-title {
+        font-size: 15px !important;
+    }
+
+    .occupation-value {
+        font-size: 32px !important;
+    }
+
+    .section-container {
+        padding: 16px 12px !important;
+        overflow-x: hidden !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .progress-list-container {
+        width: 100% !important;
+    }
+
+    .progress-item {
+        padding: 12px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .progress-info {
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+    }
+
+    .progress-metrics {
+        flex-wrap: wrap !important;
+        gap: 6px !important;
     }
 }

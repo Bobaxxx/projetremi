@@ -345,47 +345,32 @@
         }
 
         /* =================== MOBILE =================== */
-        @media (max-width: 768px) {
-            .login-page {
-                flex-direction: column;
-            }
-
+        @media (max-width: 1024px) {
             .login-left {
-                width: 100%;
-                min-width: unset;
-                padding: 32px 24px 28px;
-            }
-
-            .brand-headline {
-                font-size: 22px;
-            }
-
-            .brand-features {
-                display: none;
-            }
-
-            .brand-footer-text {
-                display: none;
-            }
-
-            .brand-area {
-                display: flex;
-                align-items: flex-start;
-                flex-direction: column;
-                gap: 12px;
-            }
-
-            .brand-logo-img {
-                height: 34px;
-                margin-bottom: 0;
+                display: none !important;
             }
 
             .login-right {
-                padding: 36px 20px;
+                padding: 32px 20px !important;
+                background: var(--bg) !important;
+                justify-content: center !important;
+                align-items: center !important;
+                min-height: 100vh;
+                width: 100%;
             }
 
             .login-box {
-                max-width: 100%;
+                background: var(--white);
+                padding: 32px 24px;
+                border-radius: 16px;
+                box-shadow: 0 10px 25px rgba(91, 71, 224, 0.08);
+                border: 1px solid rgba(91, 71, 224, 0.08);
+                width: 100%;
+                max-width: 400px;
+            }
+
+            .mobile-logo-wrapper {
+                display: flex !important;
             }
         }
     </style>
@@ -424,8 +409,11 @@
         <!-- Right Form Panel -->
         <div class="login-right">
             <div class="login-box">
+                <div class="mobile-logo-wrapper" style="display: none; justify-content: center; margin-bottom: 24px;">
+                    <img src="logobatir.png" alt="LogoBatir" style="height: 48px;">
+                </div>
                 <h2 class="login-title">Connexion</h2>
-                <p class="login-subtitle">Entrez vos identifiants pour acceder a votre espace.</p>
+                <p class="login-subtitle">Entrez vos identifiants pour accéder à votre espace.</p>
 
                 <!-- Error / Success alerts -->
                 <div class="alert error" id="login-error">

@@ -22,15 +22,11 @@
             }
         });
 
-        // Hide body until session status is determined
-        document.documentElement.style.visibility = 'hidden';
-
         (async () => {
             const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (!session && !urlParams.has('role')) {
                 window.location.replace('login.html');
-            } else {
-                document.documentElement.style.visibility = '';
             }
         })();
     </script>
@@ -121,6 +117,13 @@
                     </svg>
                     <span>Feuilles d'heures</span>
                 </a>
+                <a href="#settings" class="nav-item" data-tab="settings">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                    <span>Paramètres</span>
+                </a>
             </nav>
 
             <div class="sidebar-footer">
@@ -163,72 +166,119 @@
 
             <!-- Tab Content Pane -->
             <main class="content-pane">
-                
-                <!-- PAGE 1: D'ACCUEIL (DASHBOARD) -->
+                             <!-- PAGE 1: D'ACCUEIL (DASHBOARD) -->
                 <section id="tab-dashboard" class="tab-content active">
-                    <div class="dashboard-grid">
-                        
-                        <!-- Card 1: Chantiers planifiés aujourd'hui -->
-                        <div class="dashboard-card">
-                            <div class="card-header">
-                                <h3 class="card-title">Chantiers planifiés aujourd'hui</h3>
-                                <span class="card-icon blue">
-                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                                        <polyline points="9 22 9 12 15 12 15 22"/>
-                                    </svg>
-                                </span>
+                    <!-- ADMIN DASHBOARD VIEW -->
+                    <div id="admin-dashboard-view">
+                        <div class="dashboard-grid">
+                            
+                            <!-- Card 1: Chantiers planifiés aujourd'hui -->
+                            <div class="dashboard-card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Chantiers planifiés aujourd'hui</h3>
+                                    <span class="card-icon blue">
+                                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M4 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+                                            <path d="M13 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+                                            <path d="M13 19l-9 0" />
+                                            <path d="M4 15l9 0" />
+                                            <path d="M8 12v-5h2a3 3 0 0 1 3 3v5" />
+                                            <path d="M5 15v-2a1 1 0 0 1 1 -1h7" />
+                                            <path d="M21.12 9.88l-3.12 -4.88l-5 5" />
+                                            <path d="M21.12 9.88a3 3 0 0 1 -2.12 5.12a3 3 0 0 1 -2.12 -.88l4.24 -4.24z" />
+                                        </svg>
+                                    </span>
+                                </div>
+                                <div class="card-body" id="today-chantiers-container">
+                                    <!-- Populated dynamically or shows "Aucun chantier prévu" -->
+                                    <div class="empty-state">Aucun chantier prévu</div>
+                                </div>
                             </div>
-                            <div class="card-body" id="today-chantiers-container">
-                                <!-- Populated dynamically or shows "Aucun chantier prévu" -->
-                                <div class="empty-state">Aucun chantier prévu</div>
+
+                            <!-- Card 2: Taux d'occupation -->
+                            <div class="dashboard-card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Taux d'occupation</h3>
+                                    <span class="card-icon purple">
+                                        <img src="stats.svg" alt="Taux d'occupation" style="width: 26px; height: 26px; filter: brightness(0) saturate(100%) invert(37%) sepia(93%) saturate(5437%) hue-rotate(239deg) brightness(96%) contrast(102%);">
+                                    </span>
+                                </div>
+                                <div class="card-body occupation-body">
+                                    <div class="occupation-value">77%</div>
+                                    <div class="badge badge-purple">Employé</div>
+                                    <p class="card-desc">Taux moyen d'affectation des compagnons sur les chantiers actifs cette semaine.</p>
+                                </div>
                             </div>
+
+                            <!-- Card 3: Dernières publications -->
+                            <div class="dashboard-card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Dernières publications</h3>
+                                    <span class="card-icon green">
+                                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                        </svg>
+                                    </span>
+                                </div>
+                                <div class="card-body scrollable-activity">
+                                    <div class="activity-feed" id="activity-feed-container">
+                                        <!-- Populated dynamically -->
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
 
-                        <!-- Card 2: Taux d'occupation -->
-                        <div class="dashboard-card">
-                            <div class="card-header">
-                                <h3 class="card-title">Taux d'occupation</h3>
-                                <span class="card-icon purple">
-                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                                        <circle cx="9" cy="7" r="4"/>
-                                    </svg>
-                                </span>
+                        <!-- Lower Section: Avancement des chantiers -->
+                        <div class="section-container">
+                            <div class="section-header">
+                                <h2 class="section-title">Avancement des chantiers</h2>
                             </div>
-                            <div class="card-body occupation-body">
-                                <div class="occupation-value">77%</div>
-                                <div class="badge badge-purple">Employé</div>
-                                <p class="card-desc">Taux moyen d'affectation des compagnons sur les chantiers actifs cette semaine.</p>
+                            <div class="progress-list-container" id="project-progress-container">
+                                <!-- Populated dynamically -->
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Card 3: Dernières publications -->
-                        <div class="dashboard-card">
-                            <div class="card-header">
-                                <h3 class="card-title">Dernières publications</h3>
-                                <span class="card-icon green">
-                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                                    </svg>
-                                </span>
+                    <!-- WORKER DASHBOARD VIEW -->
+                    <div id="worker-dashboard-view" style="display: none; flex-direction: column; gap: 24px;">
+                        <!-- Header / Welcome -->
+                        <div class="welcome-box card" style="background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; padding: 24px;">
+                            <h2 id="worker-welcome-title" style="margin: 0 0 8px 0; font-size: 22px;">Bonjour !</h2>
+                            <p style="margin: 0; opacity: 0.9; font-size: 14px;">Voici vos informations pour aujourd'hui.</p>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                            <!-- Card: Mon Chantier du jour -->
+                            <div class="card" style="display: flex; flex-direction: column; gap: 14px;">
+                                <div style="display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; color: var(--primary);">
+                                    <span>🏗️</span> Mon Chantier Actuel
+                                </div>
+                                <div id="worker-active-chantier-card" class="card" style="padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; margin: 0;">
+                                    <div class="empty-state">Aucun chantier affecté</div>
+                                </div>
                             </div>
-                            <div class="card-body scrollable-activity">
-                                <div class="activity-feed" id="activity-feed-container">
-                                    <!-- Populated dynamically -->
+
+                            <!-- Card: Mon Planning Perso -->
+                            <div class="card" style="display: flex; flex-direction: column; gap: 14px;">
+                                <div style="display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; color: var(--primary);">
+                                    <span>📅</span> Mon Planning de la semaine
+                                </div>
+                                <div id="worker-schedule-details" class="card" style="padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; margin: 0; display: flex; flex-direction: column; gap: 8px;">
+                                    <div class="empty-state">Aucun jour planifié</div>
                                 </div>
                             </div>
                         </div>
 
-                    </div>
-
-                    <!-- Lower Section: Avancement des chantiers -->
-                    <div class="section-container">
-                        <div class="section-header">
-                            <h2 class="section-title">Avancement des chantiers</h2>
-                        </div>
-                        <div class="progress-list-container" id="project-progress-container">
-                            <!-- Populated dynamically -->
+                        <!-- Card: Mes Heures -->
+                        <div class="card" style="display: flex; flex-direction: column; gap: 16px; align-items: flex-start;">
+                            <div style="display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; color: var(--primary);">
+                                <span>⏱️</span> Suivi de mes heures
+                            </div>
+                            <p style="margin: 0; color: var(--text-secondary); font-size: 14px;">Consultez vos heures déclarées et validées sur vos chantiers.</p>
+                            <button class="btn btn-primary" id="btn-worker-view-hours" style="background-color: var(--accent); color: white; border: none; font-weight: 600; padding: 12px 20px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                                <span>⏱️</span> Consulter mes feuilles d'heures
+                            </button>
                         </div>
                     </div>
                 </section>
@@ -309,6 +359,7 @@
                                 <tr>
                                     <th>Chantier</th>
                                     <th>Client</th>
+                                    <th>Entreprise</th>
                                     <th>Adresse</th>
                                     <th>Statut</th>
                                     <th>Budget d'heures</th>
@@ -347,13 +398,25 @@
                 <!-- PAGE 4: PLANNING -->
                 <section id="tab-planning" class="tab-content">
                     <!-- Page Header Title and Beta Badge -->
-                    <div class="planning-header-top">
+                    <div class="planning-header-top" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                         <div class="planning-title-badge-group">
                             <h2 class="planning-main-title">Planning</h2>
                             <span class="view-badge badge-gray" style="text-transform: none; font-weight: normal; margin-left: 10px;">Classique</span>
                             <span class="badge badge-accent" style="margin-left: 6px;">Beta</span>
                             <span class="planning-report-issue" style="margin-left: 16px; font-size: 13px; color: var(--primary); cursor: pointer; text-decoration: underline;">Signaler une anomalie</span>
                         </div>
+                        <button class="btn btn-primary" id="btn-open-diffusion-modal" style="background: var(--accent); padding: 10px 16px; display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; border-radius: 8px; border: none; color: white; cursor: pointer;">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="-5.0 -10.0 110.0 135.0" width="18" height="18" fill="white">
+                                <g>
+                                    <path d="m62.5 34.723h-20.832c-2.2969 0-4.168 1.8672-4.168 4.168v1.3906h-1.3906c-2.2969 0-4.168 1.8672-4.168 4.168v16.668c0 2.2969 1.8672 4.168 4.168 4.168h26.391c2.2969 0 4.1641-1.8711 4.1641-4.168v-22.223c0-2.2969-1.8672-4.168-4.168-4.168zm-26.391 27.777c-0.76562 0-1.3906-0.625-1.3906-1.3906v-16.668c0-0.76562 0.62109-1.3906 1.3906-1.3906h20.832c0.76562 0 1.3906 0.625 1.3906 1.3906v16.668c0 0.48828 0.085938 0.95312 0.23828 1.3906zm27.781-1.3906c0 0.76562-0.62109 1.3906-1.3906 1.3906-0.76562 0-1.3906-0.625-1.3906-1.3906v-16.668c0-2.2969-1.8672-4.168-4.168-4.168h-16.668v-1.3906c0-0.76562 0.62109-1.3906 1.3906-1.3906h20.832c0.76562 0 1.3906 0.625 1.3906 1.3906v22.223z"/>
+                                    <path d="m54.168 47.223h-9.7227c-0.76953 0-1.3906 0.62109-1.3906 1.3906 0 0.76562 0.62109 1.3906 1.3906 1.3906h9.7227c0.76953 0 1.3906-0.62109 1.3906-1.3906 0-0.76562-0.62109-1.3906-1.3906-1.3906z"/>
+                                    <path d="m54.168 51.391h-15.277c-0.76953 0-1.3906 0.62109-1.3906 1.3906 0 0.76562 0.62109 1.3906 1.3906 1.3906h15.277c0.76953 0 1.3906-0.62109 1.3906-1.3906 0-0.76562-0.62109-1.3906-1.3906-1.3906z"/>
+                                    <path d="m54.168 55.555h-15.277c-0.76953 0-1.3906 0.62109-1.3906 1.3906 0 0.76563 0.62109 1.3906 1.3906 1.3906h15.277c0.76953 0 1.3906-0.62109 1.3906-1.3906 0-0.76562-0.62109-1.3906-1.3906-1.3906z"/>
+                                    <path d="m88.891 81.945c-1.4141 0-2.7266 0.42969-3.8242 1.1562l-13.516-13.516c1.9727-2.168 3.6211-4.6289 4.875-7.3164l5.5938 2.2734c-0.03125 0.24219-0.074219 0.48438-0.074219 0.73438 0 3.0625 2.4922 5.5547 5.5547 5.5547s5.5547-2.4922 5.5547-5.5547-2.4922-5.5547-5.5547-5.5547c-1.8203 0-3.4219 0.89062-4.4375 2.2461l-5.5898-2.2695c1.0781-3.0391 1.6914-6.2969 1.6914-9.6992 0-4.0508-0.83203-7.9062-2.332-11.414l9.2227-4.457c1.0195 1.2031 2.5234 1.9805 4.2188 1.9805 3.0625 0 5.5547-2.4922 5.5547-5.5547s-2.4922-5.5547-5.5547-5.5547-5.5547 2.4922-5.5547 5.5547c0 0.37109 0.039062 0.73047 0.10938 1.082l-9.207 4.4453c-1.9648-3.6055-4.6875-6.7305-7.9258-9.2148l4.5703-6.6016c0.83984 0.35938 1.7617 0.5625 2.7305 0.5625 3.8281 0 6.9453-3.1172 6.9453-6.9453 0-3.8281-3.1172-6.9453-6.9453-6.9453s-6.9453 3.1172-6.9453 6.9453c0 1.8594 0.74219 3.5391 1.9375 4.7891l-4.5742 6.6094c-4.4805-2.8047-9.7539-4.4531-15.418-4.4531-7.543 0-14.402 2.9023-19.586 7.6172l-11.129-11.129c0.97266-1.3633 1.5469-3.0234 1.5469-4.8203 0-4.5938-3.7383-8.332-8.332-8.332s-8.332 3.7383-8.332 8.332 3.7383 8.332 8.332 8.332c1.7969 0 3.457-0.57812 4.8203-1.5469l11.129 11.129c-4.7148 5.1836-7.6172 12.043-7.6172 19.586 0 6.707 2.2969 12.871 6.1172 17.805l-9.0977 7.7617c-1.4492-1.2188-3.3164-1.9531-5.3516-1.9531-4.5938 0-8.332 3.7383-8.332 8.332s3.7383 8.332 8.332 8.332 8.332-3.7383 8.332-8.332c0-1.5586-0.4375-3.0117-1.1836-4.2578l9.1055-7.7656c5.3242 5.6758 12.867 9.25 21.246 9.25 7.543 0 14.402-2.9023 19.586-7.6172l13.516 13.516c-0.72656 1.0977-1.1562 2.4102-1.1562 3.8242 0 3.8281 3.1172 6.9453 6.9453 6.9453s6.9453-3.1172 6.9453-6.9453-3.1172-6.9453-6.9453-6.9453zm-1.3906-19.445c1.5312 0 2.7773 1.2461 2.7773 2.7773s-1.2461 2.7773-2.7773 2.7773-2.7773-1.2461-2.7773-2.7773c0-0.35547 0.074219-0.69531 0.19531-1.0117 0.003906-0.011719 0.015625-0.023437 0.019531-0.035156 0.007812-0.015625 0.003906-0.035157 0.007812-0.050781 0.42578-0.98828 1.4102-1.6797 2.5508-1.6797zm2.7773-34.723c1.5312 0 2.7773 1.2461 2.7773 2.7773s-1.2461 2.7773-2.7773 2.7773-2.7773-1.2461-2.7773-2.7773 1.2461-2.7773 2.7773-2.7773zm-15.277-18.055c2.2969 0 4.168 1.8672 4.168 4.168 0 2.2969-1.8672 4.168-4.168 4.168-2.2969 0-4.168-1.8672-4.168-4.168 0-2.2969 1.8672-4.168 4.168-4.168zm-62.5 77.777c-3.0625 0-5.5547-2.4922-5.5547-5.5547s2.4922-5.5547 5.5547-5.5547 5.5547 2.4922 5.5547 5.5547-2.4922 5.5547-5.5547 5.5547zm-5.5547-75c0-3.0625 2.4922-5.5547 5.5547-5.5547s5.5547 2.4922 5.5547 5.5547-2.4922 5.5547-5.5547 5.5547-5.5547-2.4922-5.5547-5.5547zm16.664 37.5c0-14.551 11.84-26.391 26.391-26.391s26.391 11.84 26.391 26.391-11.84 26.391-26.391 26.391-26.391-11.84-26.391-26.391zm65.281 43.055c-2.2969 0-4.168-1.8672-4.168-4.168 0-2.2969 1.8672-4.168 4.168-4.168 2.2969 0 4.168 1.8672 4.168 4.168 0 2.2969-1.8672 4.168-4.168 4.168z"/>
+                                </g>
+                            </svg>
+                            Diffuser le planning
+                        </button>
                     </div>
 
                     <!-- View Switch (Chantiers vs Utilisateurs) -->
@@ -429,6 +492,10 @@
                                 <!-- Populated dynamically -->
                             </tbody>
                         </table>
+                    </div>
+                    <!-- Mobile List View (Visible only on mobile width) -->
+                    <div id="mobile-planning-list-view" style="display: none; padding: 12px 0;">
+                        <!-- Dynamic day list -->
                     </div>
                 </section>
 
@@ -599,6 +666,63 @@
                             </tbody>
                         </table>
                     </div>
+                    <!-- Mobile Hours List View (Visible only on mobile width) -->
+                    <div id="mobile-hours-list-view" style="display: none; padding: 12px 0;">
+                        <!-- Dynamic hours day list -->
+                    </div>
+                </section>
+
+                <!-- PAGE 5: PARAMETRES -->
+                <section id="tab-settings" class="tab-content" style="flex-direction: column; gap: 20px;">
+                    <div class="planning-header" style="margin-bottom: 20px;">
+                        <div class="planning-header-top">
+                            <div class="planning-title-badge-group">
+                                <h2 class="planning-main-title">Paramètres</h2>
+                                <span class="badge badge-accent" style="margin-left: 10px;">Système</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+                        <div style="display: flex; align-items: flex-start; gap: 16px;">
+                            <div style="width: 48px; height: 48px; border-radius: 10px; background: rgba(91, 71, 224, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center;">
+                                <img src="perm.svg" alt="Délégation" style="width: 32px; height: 32px; filter: brightness(0) saturate(100%) invert(37%) sepia(93%) saturate(5437%) hue-rotate(239deg) brightness(96%) contrast(102%);">
+                            </div>
+                            <div style="flex: 1;">
+                                <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">Délégation de droits (Intérim Chef de chantier)</h3>
+                                <p style="font-size: 13.5px; color: var(--gray-muted); line-height: 1.5;">Si un chef de chantier est absent, désignez un ouvrier responsable pour pointer les heures de l'équipe pendant une période spécifique.</p>
+                            </div>
+                        </div>
+                        <div style="border-top: 1px solid var(--border-color); padding-top: 16px; display: flex; justify-content: flex-end;">
+                            <button class="btn btn-primary" id="btn-open-delegation-modal" style="background: var(--accent); padding: 10px 18px; display: inline-flex; align-items: center; gap: 8px;">
+                                <img src="plus.svg" alt="" style="width: 20px; height: 20px; filter: brightness(0) invert(1);"> Absence de chef de chantier
+                            </button>
+                        </div>
+                    </div>
+
+                    <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 24px;">
+                        <h3 style="font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 16px;">Intérims et Délégations Planifiés</h3>
+                        <div class="table-container" style="box-shadow: none; border: 1px solid var(--border-color); border-radius: 8px;">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Ouvrier Désigné</th>
+                                        <th>Chantier</th>
+                                        <th>Date de début</th>
+                                        <th>Date de fin</th>
+                                        <th>Statut</th>
+                                        <th style="width: 80px; text-align: center;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="delegations-table-tbody">
+                                    <!-- Populated dynamically -->
+                                    <tr>
+                                        <td colspan="6" style="text-align: center; color: var(--gray-muted); font-style: italic; padding: 20px;">Aucune délégation active ou planifiée.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </section>
 
             </main>
@@ -647,6 +771,7 @@
                         <!-- Left Side: Image upload, Color, Status -->
                         <div class="chantier-form-left">
                             <div class="image-uploader">
+                                <input type="file" class="image-uploader-input" accept="image/*" style="display: none;">
                                 <div class="uploader-icon">
                                     <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5">
                                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -772,6 +897,7 @@
                         <!-- Left Side: Image upload, Color, Status -->
                         <div class="chantier-form-left">
                             <div class="image-uploader">
+                                <input type="file" class="image-uploader-input" accept="image/*" style="display: none;">
                                 <div class="uploader-icon">
                                     <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5">
                                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -896,6 +1022,7 @@
                         <!-- Left Side: Image upload, Color, Status -->
                         <div class="chantier-form-left">
                             <div class="image-uploader">
+                                <input type="file" class="image-uploader-input" accept="image/*" style="display: none;">
                                 <div class="uploader-icon">
                                     <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5">
                                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -961,6 +1088,14 @@
                             <div class="form-group">
                                 <label for="chantier-client" class="form-label">Client</label>
                                 <input type="text" id="chantier-client" class="form-input" placeholder="Client">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="chantier-entreprise" class="form-label">Entreprise (optionnel)</label>
+                                <select id="chantier-entreprise" class="form-input">
+                                    <option value="">Sélectionnez une entreprise</option>
+                                    <!-- Populated dynamically -->
+                                </select>
                             </div>
 
                             <div class="form-row form-row-5">
@@ -1054,9 +1189,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" id="btn-cancel-chantier-modal">Annuler</button>
-                    <button type="submit" class="btn btn-primary" style="background-color: #1e3a8a;">Créer</button>
+                <div class="modal-footer" style="padding: 16px 24px; background-color: #ffffff; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; align-items: center; gap: 12px; flex-shrink: 0;">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-chantier-modal" style="padding: 10px 18px; border-radius: 8px; cursor: pointer;">Annuler</button>
+                    <button type="submit" class="btn btn-primary" style="background-color: var(--accent); color: white; padding: 10px 22px; border-radius: 8px; cursor: pointer; border: none; font-weight: 600;">Créer</button>
                 </div>
             </form>
         </div>
@@ -1077,6 +1212,7 @@
                         <!-- Left Side: Image upload, Color, Status -->
                         <div class="chantier-form-left">
                             <div class="image-uploader">
+                                <input type="file" class="image-uploader-input" accept="image/*" style="display: none;">
                                 <div class="uploader-icon">
                                     <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5">
                                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -1142,6 +1278,14 @@
                             <div class="form-group">
                                 <label for="edit-chantier-client" class="form-label">Client</label>
                                 <input type="text" id="edit-chantier-client" class="form-input" placeholder="Client">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="edit-chantier-entreprise" class="form-label">Entreprise (optionnel)</label>
+                                <select id="edit-chantier-entreprise" class="form-input">
+                                    <option value="">Sélectionnez une entreprise</option>
+                                    <!-- Populated dynamically -->
+                                </select>
                             </div>
 
                             <div class="form-row form-row-5">
@@ -1466,6 +1610,10 @@
             <div style="display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--border-color); padding-top: 16px;">
                 <label for="drawer-manual-input" style="font-size: 11px; font-weight: 600; color: #475569;">Saisie manuelle rapide</label>
                 <input type="text" id="drawer-manual-input" style="font-size: 14px; padding: 8px; text-align: center; font-weight: 700; border-radius: 6px; border: 1px solid var(--border-color); background-color: #f8fafc; color: var(--text-primary); width: 100%;">
+                
+                <button type="button" id="btn-drawer-set-to-complete" style="margin-top: 8px; width: 100%; border: 1.5px dashed var(--accent); color: var(--accent); background: white; font-weight: 700; padding: 10px; border-radius: 8px; cursor: pointer; transition: all 0.2s; font-size: 13px; font-family: inherit;">
+                    Mettre sur "À compléter"
+                </button>
             </div>
         </div>
     </div>
@@ -1477,7 +1625,7 @@
             <div class="modal-header" style="background: linear-gradient(135deg, var(--primary), #4338ca); color: white; border-radius: 12px 12px 0 0;">
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <div style="width: 36px; height: 36px; background: rgba(255,255,255,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2">
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="white" stroke-width="2">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                             <polyline points="7 10 12 15 17 10"/>
                             <line x1="12" y1="15" x2="12" y2="3"/>
@@ -1494,7 +1642,9 @@
 
                 <!-- Date range -->
                 <div style="background: var(--bg-primary); border-radius: 10px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border-color);">
-                    <label style="font-size: 12px; font-weight: 700; color: var(--gray-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 12px;">📅 Plage de dates</label>
+                    <label style="font-size: 12px; font-weight: 700; color: var(--gray-muted); text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                        <img src="calendar.svg" alt="" style="width: 22px; height: 22px; filter: brightness(0) saturate(100%) invert(45%) sepia(8%) saturate(950%) hue-rotate(180deg) brightness(90%) contrast(90%);"> Plage de dates
+                    </label>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                         <div>
                             <label for="export-date-from" class="form-label" style="font-size: 12px;">Du</label>
@@ -1516,7 +1666,9 @@
 
                 <!-- View selection -->
                 <div style="background: var(--bg-primary); border-radius: 10px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border-color);">
-                    <label style="font-size: 12px; font-weight: 700; color: var(--gray-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 12px;">👁️ Vue à exporter</label>
+                    <label style="font-size: 12px; font-weight: 700; color: var(--gray-muted); text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                        <img src="eye.svg" alt="" style="width: 22px; height: 22px; filter: brightness(0) saturate(100%) invert(45%) sepia(8%) saturate(950%) hue-rotate(180deg) brightness(90%) contrast(90%);"> Vue à exporter
+                    </label>
                     <div style="display: flex; gap: 10px;">
                         <label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 10px; border: 2px solid var(--primary); border-radius: 8px; cursor: pointer; background: var(--primary-light);">
                             <input type="radio" name="export-view" id="export-view-chantiers" value="chantiers" checked style="accent-color: var(--primary);">
@@ -1531,7 +1683,9 @@
 
                 <!-- Format selection -->
                 <div style="background: var(--bg-primary); border-radius: 10px; padding: 16px; border: 1px solid var(--border-color);">
-                    <label style="font-size: 12px; font-weight: 700; color: var(--gray-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 12px;">📄 Format d'export</label>
+                    <label style="font-size: 12px; font-weight: 700; color: var(--gray-muted); text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                        <img src="format.svg" alt="" style="width: 22px; height: 22px; filter: brightness(0) saturate(100%) invert(45%) sepia(8%) saturate(950%) hue-rotate(180deg) brightness(90%) contrast(90%);"> Format d'export
+                    </label>
                     <div style="display: flex; gap: 10px;">
                         <label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 10px; border: 2px solid var(--primary); border-radius: 8px; cursor: pointer; background: var(--primary-light);">
                             <input type="radio" name="export-format" id="export-format-csv" value="csv" checked style="accent-color: var(--primary);">
@@ -1561,6 +1715,156 @@
                     </svg>
                     Télécharger
                 </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- MODAL: MES FEUILLES D'HEURES (Ouvriers) -->
+    <div class="modal-backdrop" id="worker-hours-modal">
+        <div class="modal" style="max-width: 500px; width: 100%;">
+            <div class="modal-header" style="background: linear-gradient(135deg, var(--primary), #4338ca); color: white; border-radius: 12px 12px 0 0; padding: 16px 20px;">
+                <h3 class="modal-title" style="color: white; font-size: 16px; margin: 0;">Mes feuilles d'heures</h3>
+                <button class="modal-close" id="btn-close-worker-hours-modal" style="color: white; opacity: 0.8; font-size: 24px; cursor: pointer; background: none; border: none;">&times;</button>
+            </div>
+            <div class="modal-body" id="worker-modal-hours-list" style="padding: 24px; display: flex; flex-direction: column; gap: 12px;">
+                <!-- Dynamic hours populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: GESTION DES ABSENCES & DÉLÉGATION -->
+    <div class="modal-backdrop" id="delegation-modal">
+        <div class="modal" style="max-width: 520px; width: 100%;">
+            <div class="modal-header" style="background: linear-gradient(135deg, var(--primary), #4338ca); color: white; border-radius: 12px 12px 0 0; padding: 16px 20px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <img src="perm.svg" alt="Délégation" style="width: 24px; height: 24px; filter: brightness(0) invert(1);">
+                    <div>
+                        <h3 class="modal-title" style="color: white; font-size: 16px; margin: 0;">Déléguer les droits de pointage</h3>
+                        <p style="font-size: 12px; color: rgba(255,255,255,0.75); margin: 0; margin-top: 2px;">Désignez un ouvrier responsable temporaire</p>
+                    </div>
+                </div>
+                <button class="modal-close" id="btn-close-delegation-modal" style="color: white; opacity: 0.8; font-size: 24px; cursor: pointer; background: none; border: none;">&times;</button>
+            </div>
+            <form id="delegation-form">
+                <input type="hidden" id="edit-delegation-id" value="">
+                <div class="modal-body" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+                    <div>
+                        <label for="delegation-worker-select" class="form-label" style="font-weight: 600; font-size: 13px; color: var(--text-primary); margin-bottom: 6px; display: block;">Ouvrier désigné *</label>
+                        <select id="delegation-worker-select" class="form-select" required style="width: 100%; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13.5px; background-color: white;">
+                            <option value="">Sélectionnez un ouvrier...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-weight: 600; font-size: 13px; color: var(--text-primary); margin-bottom: 6px; display: block;">Chantiers autorisés *</label>
+                        <div id="delegation-chantiers-checkbox-list" style="max-height: 140px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px; background: #f8fafc;">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div>
+                            <label for="delegation-start-date" class="form-label" style="font-weight: 600; font-size: 13px; margin-bottom: 6px; display: block;">Date de début *</label>
+                            <input type="date" id="delegation-start-date" class="form-input" required style="padding: 9px 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13.5px; width: 100%;">
+                        </div>
+                        <div>
+                            <label for="delegation-end-date" class="form-label" style="font-weight: 600; font-size: 13px; margin-bottom: 6px; display: block;">Date de fin *</label>
+                            <input type="date" id="delegation-end-date" class="form-input" required style="padding: 9px 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13.5px; width: 100%;">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--border-color); padding: 16px 24px;">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-delegation-modal" style="padding: 10px 16px;">Annuler</button>
+                    <button type="submit" class="btn btn-primary" style="background: var(--accent); padding: 10px 20px;">Déléguer les droits</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- MODAL: DIFFUSION PLANNING (WhatsApp) -->
+    <div class="modal-backdrop" id="diffusion-modal">
+        <div class="modal" style="max-width: 620px; width: 100%;">
+            <div class="modal-header" style="background: linear-gradient(135deg, var(--primary), #4338ca); color: white; border-radius: 12px 12px 0 0; padding: 16px 20px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 20px; display:flex; align-items:center;">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="-5.0 -10.0 110.0 135.0" width="24" height="24" fill="white"><g><path d="m62.5 34.723h-20.832c-2.2969 0-4.168 1.8672-4.168 4.168v1.3906h-1.3906c-2.2969 0-4.168 1.8672-4.168 4.168v16.668c0 2.2969 1.8672 4.168 4.168 4.168h26.391c2.2969 0 4.1641-1.8711 4.1641-4.168v-22.223c0-2.2969-1.8672-4.168-4.168-4.168zm-26.391 27.777c-0.76562 0-1.3906-0.625-1.3906-1.3906v-16.668c0-0.76562 0.62109-1.3906 1.3906-1.3906h20.832c0.76562 0 1.3906 0.625 1.3906 1.3906v16.668c0 0.48828 0.085938 0.95312 0.23828 1.3906zm27.781-1.3906c0 0.76562-0.62109 1.3906-1.3906 1.3906-0.76562 0-1.3906-0.625-1.3906-1.3906v-16.668c0-2.2969-1.8672-4.168-4.168-4.168h-16.668v-1.3906c0-0.76562 0.62109-1.3906 1.3906-1.3906h20.832c0.76562 0 1.3906 0.625 1.3906 1.3906v22.223z"/><path d="m54.168 47.223h-9.7227c-0.76953 0-1.3906 0.62109-1.3906 1.3906 0 0.76562 0.62109 1.3906 1.3906 1.3906h9.7227c0.76953 0 1.3906-0.62109 1.3906-1.3906 0-0.76562-0.62109-1.3906-1.3906-1.3906z"/><path d="m54.168 51.391h-15.277c-0.76953 0-1.3906 0.62109-1.3906 1.3906 0 0.76562 0.62109 1.3906 1.3906 1.3906h15.277c0.76953 0 1.3906-0.62109 1.3906-1.3906 0-0.76562-0.62109-1.3906-1.3906-1.3906z"/><path d="m54.168 55.555h-15.277c-0.76953 0-1.3906 0.62109-1.3906 1.3906 0 0.76563 0.62109 1.3906 1.3906 1.3906h15.277c0.76953 0 1.3906-0.62109 1.3906-1.3906 0-0.76562-0.62109-1.3906-1.3906-1.3906z"/><path d="m88.891 81.945c-1.4141 0-2.7266 0.42969-3.8242 1.1562l-13.516-13.516c1.9727-2.168 3.6211-4.6289 4.875-7.3164l5.5938 2.2734c-0.03125 0.24219-0.074219 0.48438-0.074219 0.73438 0 3.0625 2.4922 5.5547 5.5547 5.5547s5.5547-2.4922 5.5547-5.5547-2.4922-5.5547-5.5547-5.5547c-1.8203 0-3.4219 0.89062-4.4375 2.2461l-5.5898-2.2695c1.0781-3.0391 1.6914-6.2969 1.6914-9.6992 0-4.0508-0.83203-7.9062-2.332-11.414l9.2227-4.457c1.0195 1.2031 2.5234 1.9805 4.2188 1.9805 3.0625 0 5.5547-2.4922 5.5547-5.5547s-2.4922-5.5547-5.5547-5.5547-5.5547 2.4922-5.5547 5.5547c0 0.37109 0.039062 0.73047 0.10938 1.082l-9.207 4.4453c-1.9648-3.6055-4.6875-6.7305-7.9258-9.2148l4.5703-6.6016c0.83984 0.35938 1.7617 0.5625 2.7305 0.5625 3.8281 0 6.9453-3.1172 6.9453-6.9453 0-3.8281-3.1172-6.9453-6.9453-6.9453s-6.9453 3.1172-6.9453 6.9453c0 1.8594 0.74219 3.5391 1.9375 4.7891l-4.5742 6.6094c-4.4805-2.8047-9.7539-4.4531-15.418-4.4531-7.543 0-14.402 2.9023-19.586 7.6172l-11.129-11.129c0.97266-1.3633 1.5469-3.0234 1.5469-4.8203 0-4.5938-3.7383-8.332-8.332-8.332s-8.332 3.7383-8.332 8.332 3.7383 8.332 8.332 8.332c1.7969 0 3.457-0.57812 4.8203-1.5469l11.129 11.129c-4.7148 5.1836-7.6172 12.043-7.6172 19.586 0 6.707 2.2969 12.871 6.1172 17.805l-9.0977 7.7617c-1.4492-1.2188-3.3164-1.9531-5.3516-1.9531-4.5938 0-8.332 3.7383-8.332 8.332s3.7383 8.332 8.332 8.332 8.332-3.7383 8.332-8.332c0-1.5586-0.4375-3.0117-1.1836-4.2578l9.1055-7.7656c5.3242 5.6758 12.867 9.25 21.246 9.25 7.543 0 14.402-2.9023 19.586-7.6172l13.516 13.516c-0.72656 1.0977-1.1562 2.4102-1.1562 3.8242 0 3.8281 3.1172 6.9453 6.9453 6.9453s6.9453-3.1172 6.9453-6.9453-3.1172-6.9453-6.9453-6.9453zm-1.3906-19.445c1.5312 0 2.7773 1.2461 2.7773 2.7773s-1.2461 2.7773-2.7773 2.7773-2.7773-1.2461-2.7773-2.7773c0-0.35547 0.074219-0.69531 0.19531-1.0117 0.003906-0.011719 0.015625-0.023437 0.019531-0.035156 0.007812-0.015625 0.003906-0.035157 0.007812-0.050781 0.42578-0.98828 1.4102-1.6797 2.5508-1.6797zm2.7773-34.723c1.5312 0 2.7773 1.2461 2.7773 2.7773s-1.2461 2.7773-2.7773 2.7773-2.7773-1.2461-2.7773-2.7773 1.2461-2.7773 2.7773-2.7773zm-15.277-18.055c2.2969 0 4.168 1.8672 4.168 4.168 0 2.2969-1.8672 4.168-4.168 4.168-2.2969 0-4.168-1.8672-4.168-4.168 0-2.2969 1.8672-4.168 4.168-4.168zm-62.5 77.777c-3.0625 0-5.5547-2.4922-5.5547-5.5547s2.4922-5.5547 5.5547-5.5547 5.5547 2.4922 5.5547 5.5547-2.4922 5.5547-5.5547 5.5547zm-5.5547-75c0-3.0625 2.4922-5.5547 5.5547-5.5547s5.5547 2.4922 5.5547 5.5547-2.4922 5.5547-5.5547 5.5547-5.5547-2.4922-5.5547-5.5547zm16.664 37.5c0-14.551 11.84-26.391 26.391-26.391s26.391 11.84 26.391 26.391-11.84 26.391-26.391 26.391-26.391-11.84-26.391-26.391zm65.281 43.055c-2.2969 0-4.168-1.8672-4.168-4.168 0-2.2969 1.8672-4.168 4.168-4.168 2.2969 0 4.168 1.8672 4.168 4.168 0 2.2969-1.8672 4.168-4.168 4.168z"/></g></svg>
+                    </span>
+                    <div>
+                        <h3 class="modal-title" style="color: white; font-size: 16px; margin: 0;">Diffuser le planning hebdomadaire</h3>
+                        <p style="font-size: 12px; color: rgba(255,255,255,0.75); margin: 0; margin-top: 2px;">Envoyez le planning par WhatsApp aux ouvriers</p>
+                    </div>
+                </div>
+                <button class="modal-close" id="btn-close-diffusion-modal" style="color: white; opacity: 0.8; font-size: 24px; cursor: pointer; background: none; border: none;">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 24px;">
+                <div style="display: flex; gap: 16px; align-items: center; background: #f1f5f9; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+                    <span style="font-weight: 600; font-size: 13.5px; color: var(--text-primary);">Canal d'envoi :</span>
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text-primary);">
+                        <input type="radio" name="diffusion-channel" value="whatsapp" checked style="accent-color: var(--accent);">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="-5.0 -10.0 110.0 135.0" width="22" height="22" fill="currentColor"><path d="m33.379 79.781c5.0781 2.8008 10.801 4.2695 16.621 4.2695 19.02 0 34.5-15.48 34.5-34.5s-15.48-34.5-34.5-34.5-34.5 15.48-34.5 34.5c0 6.1094 1.6094 12.09 4.6797 17.352l-4.3906 18.051zm1.832-46.352c0.73047-0.67188 1.6797-1.0312 2.6719-1.0312h1.0508c1.3906 0 2.6289 0.87109 3.1016 2.1719l2.1484 5.9219c0.19922 0.55859 0.10156 1.1797-0.26953 1.6484l-1.6992 2.1211c-0.67188 0.82812-0.85156 1.9609-0.46094 2.9492 2.0586 5.1797 8.1797 8.8203 11.379 10.422 1.1602 0.57813 2.5508 0.35938 3.4688-0.55078l1.8789-1.8789c0.44922-0.44922 1.1211-0.60938 1.7305-0.42188l5.6992 1.8203c1.3711 0.44141 2.3008 1.7109 2.3008 3.1484v1.4492c0 1.0586-0.42188 2.0781-1.1719 2.8281-5.5508 5.4805-14.762 1.4609-20.73-2.1992-4.3008-2.6406-8.0508-6.1094-10.84-10.32-6.75-10.188-2.6484-15.898-0.25781-18.078z"/></svg> WhatsApp (Redirection)
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text-primary);">
+                        <input type="radio" name="diffusion-channel" value="sms" style="accent-color: var(--accent);">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="-5.0 -10.0 110.0 135.0" width="22" height="22" fill="currentColor"><path d="m33 7c-4.4141 0-8 3.5859-8 8v70c0 4.4141 3.5859 8 8 8h34c4.4141 0 8-3.5859 8-8v-70c0-4.4141-3.5859-8-8-8zm0 2h34c3.3398 0 6 2.6602 6 6v2h-46v-2c0-3.3398 2.6602-6 6-6zm-6 10h46v58h-46zm0 60h46v6c0 3.3398-2.6602 6-6 6h-34c-3.3398 0-6-2.6602-6-6zm23 4c-1.1055 0-2 0.89453-2 2s0.89453 2 2 2 2-0.89453 2-2-0.89453-2-2-2z"/></svg> SMS Twilio (Automatique)
+                    </label>
+                </div>
+                
+                <div class="table-container" style="box-shadow: none; border: 1px solid var(--border-color); border-radius: 8px; max-height: 300px; overflow-y: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Ouvrier</th>
+                                <th>Téléphone</th>
+                                <th style="text-align: center; width: 280px;" id="diffusion-action-header">Actions d'envoi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="diffusion-table-tbody">
+                            <!-- Populated dynamically in script.js -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding: 16px 24px;">
+                <button type="button" class="btn btn-primary" id="btn-send-bulk-sms" style="background: var(--primary); padding: 10px 20px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="-5.0 -10.0 110.0 135.0" width="16" height="16" fill="white"><g><path d="m62.5 34.723h-20.832c-2.2969 0-4.168 1.8672-4.168 4.168v1.3906h-1.3906c-2.2969 0-4.168 1.8672-4.168 4.168v16.668c0 2.2969 1.8672 4.168 4.168 4.168h26.391c2.2969 0 4.1641-1.8711 4.1641-4.168v-22.223c0-2.2969-1.8672-4.168-4.168-4.168zm-26.391 27.777c-0.76562 0-1.3906-0.625-1.3906-1.3906v-16.668c0-0.76562 0.62109-1.3906 1.3906-1.3906h20.832c0.76562 0 1.3906 0.625 1.3906 1.3906v16.668c0 0.48828 0.085938 0.95312 0.23828 1.3906zm27.781-1.3906c0 0.76562-0.62109 1.3906-1.3906 1.3906-0.76562 0-1.3906-0.625-1.3906-1.3906v-16.668c0-2.2969-1.8672-4.168-4.168-4.168h-16.668v-1.3906c0-0.76562 0.62109-1.3906 1.3906-1.3906h20.832c0.76562 0 1.3906 0.625 1.3906 1.3906v22.223z"/><path d="m54.168 47.223h-9.7227c-0.76953 0-1.3906 0.62109-1.3906 1.3906 0 0.76562 0.62109 1.3906 1.3906 1.3906h9.7227c0.76953 0 1.3906-0.62109 1.3906-1.3906 0-0.76562-0.62109-1.3906-1.3906-1.3906z"/><path d="m54.168 51.391h-15.277c-0.76953 0-1.3906 0.62109-1.3906 1.3906 0 0.76562 0.62109 1.3906 1.3906 1.3906h15.277c0.76953 0 1.3906-0.62109 1.3906-1.3906 0-0.76562-0.62109-1.3906-1.3906-1.3906z"/><path d="m54.168 55.555h-15.277c-0.76953 0-1.3906 0.62109-1.3906 1.3906 0 0.76563 0.62109 1.3906 1.3906 1.3906h15.277c0.76953 0 1.3906-0.62109 1.3906-1.3906 0-0.76562-0.62109-1.3906-1.3906-1.3906z"/><path d="m88.891 81.945c-1.4141 0-2.7266 0.42969-3.8242 1.1562l-13.516-13.516c1.9727-2.168 3.6211-4.6289 4.875-7.3164l5.5938 2.2734c-0.03125 0.24219-0.074219 0.48438-0.074219 0.73438 0 3.0625 2.4922 5.5547 5.5547 5.5547s5.5547-2.4922 5.5547-5.5547-2.4922-5.5547-5.5547-5.5547c-1.8203 0-3.4219 0.89062-4.4375 2.2461l-5.5898-2.2695c1.0781-3.0391 1.6914-6.2969 1.6914-9.6992 0-4.0508-0.83203-7.9062-2.332-11.414l9.2227-4.457c1.0195 1.2031 2.5234 1.9805 4.2188 1.9805 3.0625 0 5.5547-2.4922 5.5547-5.5547s-2.4922-5.5547-5.5547-5.5547-5.5547 2.4922-5.5547 5.5547c0 0.37109 0.039062 0.73047 0.10938 1.082l-9.207 4.4453c-1.9648-3.6055-4.6875-6.7305-7.9258-9.2148l4.5703-6.6016c0.83984 0.35938 1.7617 0.5625 2.7305 0.5625 3.8281 0 6.9453-3.1172 6.9453-6.9453 0-3.8281-3.1172-6.9453-6.9453-6.9453s-6.9453 3.1172-6.9453 6.9453c0 1.8594 0.74219 3.5391 1.9375 4.7891l-4.5742 6.6094c-4.4805-2.8047-9.7539-4.4531-15.418-4.4531-7.543 0-14.402 2.9023-19.586 7.6172l-11.129-11.129c0.97266-1.3633 1.5469-3.0234 1.5469-4.8203 0-4.5938-3.7383-8.332-8.332-8.332s-8.332 3.7383-8.332 8.332 3.7383 8.332 8.332 8.332c1.7969 0 3.457-0.57812 4.8203-1.5469l11.129 11.129c-4.7148 5.1836-7.6172 12.043-7.6172 19.586 0 6.707 2.2969 12.871 6.1172 17.805l-9.0977 7.7617c-1.4492-1.2188-3.3164-1.9531-5.3516-1.9531-4.5938 0-8.332 3.7383-8.332 8.332s3.7383 8.332 8.332 8.332 8.332-3.7383 8.332-8.332c0-1.5586-0.4375-3.0117-1.1836-4.2578l9.1055-7.7656c5.3242 5.6758 12.867 9.25 21.246 9.25 7.543 0 14.402-2.9023 19.586-7.6172l13.516 13.516c-0.72656 1.0977-1.1562 2.4102-1.1562 3.8242 0 3.8281 3.1172 6.9453 6.9453 6.9453s6.9453-3.1172 6.9453-6.9453-3.1172-6.9453-6.9453-6.9453zm-1.3906-19.445c1.5312 0 2.7773 1.2461 2.7773 2.7773s-1.2461 2.7773-2.7773 2.7773-2.7773-1.2461-2.7773-2.7773c0-0.35547 0.074219-0.69531 0.19531-1.0117 0.003906-0.011719 0.015625-0.023437 0.019531-0.035156 0.007812-0.015625 0.003906-0.035157 0.007812-0.050781 0.42578-0.98828 1.4102-1.6797 2.5508-1.6797zm2.7773-34.723c1.5312 0 2.7773 1.2461 2.7773 2.7773s-1.2461 2.7773-2.7773 2.7773-2.7773-1.2461-2.7773-2.7773 1.2461-2.7773 2.7773-2.7773zm-15.277-18.055c2.2969 0 4.168 1.8672 4.168 4.168 0 2.2969-1.8672 4.168-4.168 4.168-2.2969 0-4.168-1.8672-4.168-4.168 0-2.2969 1.8672-4.168 4.168-4.168zm-62.5 77.777c-3.0625 0-5.5547-2.4922-5.5547-5.5547s2.4922-5.5547 5.5547-5.5547 5.5547 2.4922 5.5547 5.5547-2.4922 5.5547-5.5547 5.5547zm-5.5547-75c0-3.0625 2.4922-5.5547 5.5547-5.5547s5.5547 2.4922 5.5547 5.5547-2.4922 5.5547-5.5547 5.5547-5.5547-2.4922-5.5547-5.5547zm16.664 37.5c0-14.551 11.84-26.391 26.391-26.391s26.391 11.84 26.391 26.391-11.84 26.391-26.391 26.391-26.391-11.84-26.391-26.391zm65.281 43.055c-2.2969 0-4.168-1.8672-4.168-4.168 0-2.2969 1.8672-4.168 4.168-4.168 2.2969 0 4.168 1.8672 4.168 4.168 0 2.2969-1.8672 4.168-4.168 4.168z"/></g></svg>
+                    Tout envoyer par SMS
+                </button>
+                <button type="button" class="btn btn-secondary" id="btn-cancel-diffusion-modal" style="padding: 10px 16px;">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Onboarding Modal (Full Screen) -->
+    <div id="onboarding-modal" class="modal-backdrop" style="display: none; z-index: 9999; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);">
+        <div class="modal modal-large" style="max-width: 500px; border-radius: 16px; padding: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+            <div style="text-align: center; margin-bottom: 24px;">
+                <div style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: var(--primary-light); color: var(--primary); margin-bottom: 16px;">
+                    <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                </div>
+                <h2 style="font-family: var(--font-heading); font-size: 28px; font-weight: 700; color: var(--text-primary); margin: 0 0 8px 0;">Bienvenue sur LogoBatir !</h2>
+                <p style="color: var(--gray-muted); font-size: 15px; margin: 0;">Commençons par configurer vos entreprises pour organiser vos chantiers.</p>
+            </div>
+
+            <div class="form-group">
+                <label for="onboarding-entreprise-name" class="form-label" style="font-weight: 600;">Ajouter une entreprise</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="onboarding-entreprise-name" class="form-input" placeholder="Ex: BTP Construction..." style="flex: 1;">
+                    <button type="button" id="btn-add-onboarding-entreprise" class="btn btn-secondary" style="white-space: nowrap;">Ajouter</button>
+                </div>
+            </div>
+
+            <div class="table-container" style="margin-top: 16px; border: 1px solid var(--border-color); border-radius: 8px; max-height: 200px; overflow-y: auto;">
+                <table class="data-table">
+                    <tbody id="onboarding-entreprises-list">
+                        <!-- Populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+            <p id="onboarding-error-msg" style="color: var(--danger); font-size: 13px; margin-top: 8px; display: none;"></p>
+
+            <div style="margin-top: 32px; text-align: right;">
+                <button type="button" class="btn btn-primary" id="btn-finish-onboarding" style="width: 100%; padding: 12px; font-size: 16px; font-weight: 600;" disabled>Terminer et accéder à l'application</button>
             </div>
         </div>
     </div>
