@@ -3,10 +3,10 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
-// Twilio configuration (hardcoded securely in backend server)
-const TWILIO_ACCOUNT_SID = 'AC7a6eb7a2c210e25cfbb67f5bc08c4a5d';
-const TWILIO_AUTH_TOKEN = '4fc8c5a47b5fd5430cccdf05e6e17e17';
-const TWILIO_FROM_NUMBER = '+13854327129';
+// Twilio configuration — reads from environment variables (set in your hosting platform)
+const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID || 'AC7a6eb7a2c210e25cfbb67f5bc08c4a5d';
+const TWILIO_AUTH_TOKEN  = process.env.TWILIO_AUTH_TOKEN  || '4fc8c5a47b5fd5430cccdf05e6e17e17';
+const TWILIO_FROM_NUMBER = process.env.TWILIO_FROM_NUMBER || '+13854327129';
 
 const PORT = process.env.PORT || 8080;
 
