@@ -8,7 +8,7 @@ const TWILIO_ACCOUNT_SID = 'AC7a6eb7a2c210e25cfbb67f5bc08c4a5d';
 const TWILIO_AUTH_TOKEN = '4fc8c5a47b5fd5430cccdf05e6e17e17';
 const TWILIO_FROM_NUMBER = '+13854327129';
 
-const PORT = 8080;
+const PORT = process.env.PORT || 8080;
 
 // MIME types dictionary for static file serving
 const MIME_TYPES = {
