@@ -6092,8 +6092,9 @@ async function sendSingleSMSViaBackend(workerId, phone, mode) {
 function initDiffusionFeatures() {
     const btnOpen = document.getElementById('btn-open-diffusion-modal');
     if (btnOpen) {
-        // Toggle display based on permissions (only visible for Admin & Chef)
-        btnOpen.style.display = (isAdmin || isChef) ? 'inline-flex' : 'none';
+        // DIFFUSION DÉSACTIVÉE TEMPORAIREMENT - retirer le commentaire ci-dessous pour réactiver
+        // btnOpen.style.display = (isAdmin || isChef) ? 'inline-flex' : 'none';
+        btnOpen.style.display = 'none'; // Masqué jusqu'à réactivation
 
         btnOpen.addEventListener('click', () => {
             console.log("Diffuser planning button clicked");
