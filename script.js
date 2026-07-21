@@ -572,6 +572,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             if (currentUserProfile) {
+                // Déconnexion forcée si le compte est inactif
+                if (currentUserProfile.status && currentUserProfile.status.toLowerCase() !== 'actif') {
+                    await showCustomAlert("Votre compte a été désactivé par un administrateur. Vous n'avez plus accès à l'application.", "error");
+                    if (useSupabase && supabaseClient) {
+                        await supabaseClient.auth.signOut();
+                    }
+                    window.location.replace('login.html');
+                    return;
+                }
                 const roleLower = (currentUserProfile.role || '').toLowerCase();
                 const typeLower = (currentUserProfile.type || '').toLowerCase();
                 
