@@ -1156,6 +1156,44 @@ function openUserDetail(userId) {
     renderUserDetail();
 }
 
+function setStatusToggleState(prefix, status) {
+    const toggle = document.getElementById(`${prefix}-user-status-toggle`);
+    const input = document.getElementById(`${prefix}-user-status-input`);
+    const text = document.getElementById(`${prefix}-user-status-text`);
+    const pill = document.getElementById(`${prefix}-user-status-pill`);
+    if(!toggle) return;
+
+    if (status === 'Actif') {
+        input.value = 'Actif';
+        text.textContent = 'Activé';
+        toggle.style.backgroundColor = '#d1fae5';
+        toggle.style.color = '#065f46';
+        pill.style.backgroundColor = '#10b981';
+        pill.style.justifyContent = 'flex-end';
+    } else {
+        input.value = 'Inactif';
+        text.textContent = 'Désactivé';
+        toggle.style.backgroundColor = '#fee2e2';
+        toggle.style.color = '#991b1b';
+        pill.style.backgroundColor = '#f87171';
+        pill.style.justifyContent = 'flex-start';
+    }
+}
+
+function initStatusToggles() {
+    ['add', 'edit'].forEach(prefix => {
+        const toggle = document.getElementById(`${prefix}-user-status-toggle`);
+        const input = document.getElementById(`${prefix}-user-status-input`);
+        
+        if (toggle && input) {
+            toggle.addEventListener('click', () => {
+                const newStatus = input.value === 'Actif' ? 'Inactif' : 'Actif';
+                setStatusToggleState(prefix, newStatus);
+            });
+        }
+    });
+}
+
 // Open edit user modal (from table row or detail view)
 function openEditUserModal(e, userId) {
     if (e && e.stopPropagation) e.stopPropagation();
@@ -1183,6 +1221,9 @@ function openEditUserModal(e, userId) {
             opt.selected = opt.value === (u.type || 'Employé');
         });
     }
+
+    // Initialize Status Toggle
+    setStatusToggleState('edit', u.status || 'Actif');
 
     const modal = document.getElementById('edit-user-modal');
     if (modal) {
@@ -2211,6 +2252,7 @@ function initModals() {
                 const role = document.getElementById('edit-user-role-select').value;
                 const type = document.getElementById('edit-user-type').value;
                 const color = document.getElementById('edit-user-color-input').value;
+                const status = document.getElementById('edit-user-status-input') ? document.getElementById('edit-user-status-input').value : 'Actif';
 
                 let imgData = null;
                 const editUploader = document.querySelector('#edit-user-modal .image-uploader');
@@ -2220,18 +2262,18 @@ function initModals() {
 
                 if (useSupabase) {
                     try {
-                        const { error } = await supabaseClient.from('utilisateurs').update({ firstname, lastname, phone, role, type, color }).eq('id', userId);
+                        const { error } = await supabaseClient.from('utilisateurs').update({ firstname, lastname, phone, role, type, color, status }).eq('id', userId);
                         if (error) throw error;
                     } catch (err) {
                         console.warn("La modification complète a échoué (colonne color absente dans Supabase). Repli sur les champs de base.", err);
                         // Fallback: update only core fields that are guaranteed to exist
-                        await supabaseClient.from('utilisateurs').update({ firstname, lastname, phone, role, type }).eq('id', userId);
+                        await supabaseClient.from('utilisateurs').update({ firstname, lastname, phone, role, type, status }).eq('id', userId);
                     }
                     await loadDataFromSupabase();
                 } else {
                     const idx = users.findIndex(u => u.id === userId);
                     if (idx !== -1) {
-                        users[idx] = { ...users[idx], firstname, lastname, phone, code, role, type, color };
+                        users[idx] = { ...users[idx], firstname, lastname, phone, code, role, type, color, status };
                     }
                 }
 
@@ -2389,6 +2431,8 @@ function openAssignModal(e, chantierId, userId) {
 
 // Form submissions
 function initForms() {
+    initStatusToggles();
+
     // 1. Add User Form
     const userForm = document.getElementById('add-user-form');
     userForm.addEventListener('submit', async (e) => {
@@ -2407,7 +2451,7 @@ function initForms() {
             lastname,
             role,
             type,
-            status: 'Actif',
+            status: document.getElementById('add-user-status-input') ? document.getElementById('add-user-status-input').value : 'Actif',
             phone,
             color,
             code

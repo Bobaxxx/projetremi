@@ -866,10 +866,11 @@
 
                             <div class="form-group" style="margin-top: 16px;">
                                 <label class="form-label">Statut</label>
-                                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background-color: #d1fae5; color: #065f46; border-radius: 8px; font-size: 13.5px; font-weight: 600;">
-                                    <span>Activé</span>
-                                    <span style="width: 32px; height: 18px; background-color: #10b981; border-radius: 9px; display: inline-flex; align-items: center; justify-content: flex-end; padding: 2px; cursor: pointer;">
-                                        <span style="width: 14px; height: 14px; background-color: white; border-radius: 50%;"></span>
+                                <input type="hidden" id="add-user-status-input" value="Actif">
+                                <div id="add-user-status-toggle" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background-color: #d1fae5; color: #065f46; border-radius: 8px; font-size: 13.5px; font-weight: 600; cursor: pointer; user-select: none; transition: all 0.3s ease;">
+                                    <span id="add-user-status-text">Activé</span>
+                                    <span id="add-user-status-pill" style="width: 32px; height: 18px; background-color: #10b981; border-radius: 9px; display: inline-flex; align-items: center; justify-content: flex-end; padding: 2px; transition: all 0.3s ease;">
+                                        <span id="add-user-status-knob" style="width: 14px; height: 14px; background-color: white; border-radius: 50%; transition: all 0.3s ease;"></span>
                                     </span>
                                 </div>
                             </div>
@@ -992,11 +993,11 @@
 
                             <div class="form-group" style="margin-top: 16px;">
                                 <label class="form-label">Statut</label>
-                                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background-color: #d1fae5; color: #065f46; border-radius: 8px; font-size: 13.5px; font-weight: 600;">
-                                    <span>Activé</span>
-                                    <!-- Simple switch simulation -->
-                                    <span style="width: 32px; height: 18px; background-color: #10b981; border-radius: 9px; display: inline-flex; align-items: center; justify-content: flex-end; padding: 2px; cursor: pointer;">
-                                        <span style="width: 14px; height: 14px; background-color: white; border-radius: 50%;"></span>
+                                <input type="hidden" id="edit-user-status-input" value="Actif">
+                                <div id="edit-user-status-toggle" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background-color: #d1fae5; color: #065f46; border-radius: 8px; font-size: 13.5px; font-weight: 600; cursor: pointer; user-select: none; transition: all 0.3s ease;">
+                                    <span id="edit-user-status-text">Activé</span>
+                                    <span id="edit-user-status-pill" style="width: 32px; height: 18px; background-color: #10b981; border-radius: 9px; display: inline-flex; align-items: center; justify-content: flex-end; padding: 2px; transition: all 0.3s ease;">
+                                        <span id="edit-user-status-knob" style="width: 14px; height: 14px; background-color: white; border-radius: 50%; transition: all 0.3s ease;"></span>
                                     </span>
                                 </div>
                             </div>
