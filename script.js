@@ -494,11 +494,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const parts = formattedName.split(' ');
                 currentUserProfile = {
                     id: user.id,
-                    firstname: parts[0] || 'Compagnon',
+                    firstname: parts[0] || 'Admin',
                     lastname: parts.slice(1).join(' ') || '',
-                    role: isAdmin ? 'Administrateur' : 'Compagnon',
+                    role: 'Administrateur',
                     status: 'Actif'
                 };
+            }
+
+            // ── Override par email : si l'email contient "admin", forcer le rôle admin ──
+            // Cela permet à admin@test.com d'être Admin même si son profil DB a un autre rôle
+            if (emailLower.includes('admin')) {
+                isAdmin = true;
+                isChef = false;
+                isOuvrier = false;
+                // Forcer aussi le rôle affiché dans la sidebar
+                if (currentUserProfile) currentUserProfile.role = 'Administrateur';
             }
 
             // Update profile info in sidebar
