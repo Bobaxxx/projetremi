@@ -5317,7 +5317,10 @@ function applyRolePermissions() {
                 <div style="display: flex; flex-direction: column; gap: 8px;">
                     <span style="font-weight: 800; font-size: 16px; color: var(--text-primary);">${assignedChantier.name}</span>
                     <span style="font-size: 12px; color: var(--gray-muted); text-transform: uppercase; font-weight: 700;">Client: ${assignedChantier.client || 'Client'}</span>
-                    <span style="font-size: 13px; color: var(--text-secondary);">📍 ${assignedChantier.address || 'Adresse non spécifiée'}</span>
+                    <span style="font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
+                        <img src="place.svg" alt="Adresse" style="width: 16px; height: 16px; filter: brightness(0) saturate(100%) invert(37%) sepia(93%) saturate(5437%) hue-rotate(239deg) brightness(96%) contrast(102%);">
+                        ${assignedChantier.address || 'Adresse non spécifiée'}
+                    </span>
                     <span style="font-size: 11px; margin-top: 4px; font-weight: 700; color: ${assignedChantier.status === 'Ouvert' ? 'var(--green)' : '#ef4444'};">
                         ● Chantier ${assignedChantier.status}
                     </span>
