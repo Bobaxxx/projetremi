@@ -1598,7 +1598,7 @@ function renderPlanning() {
             `;
 
             projectRow.addEventListener('click', (e) => {
-                if (e.target.closest('.btn') || e.target.closest('.project-add-companion-btn'))) return;
+                if (e.target.closest('.btn') || e.target.closest('.project-add-companion-btn')) return;
                 collapsedProjects[ch.id] = !collapsedProjects[ch.id];
                 renderPlanning();
             });
@@ -3200,7 +3200,7 @@ function renderHoursRows() {
     if (currentHoursView === 'chantiers') {
         chantiers.forEach(ch => {
             if (hoursSelectFilterVal !== 'all' && hoursSelectFilterVal !== ch.id) return;
-            if (query && !ch.name.toLowerCase().includes(query) && !ch.client.toLowerCase().includes(query))) return;
+            if (query && !ch.name.toLowerCase().includes(query) && !ch.client.toLowerCase().includes(query)) return;
 
             // State Filter
             if (hoursStatusFilterVal !== 'all') {
@@ -4326,7 +4326,7 @@ function renderChantierDetail() {
 
 async function submitChantierFeedPost() {
     const input = document.getElementById('chantier-new-post-input');
-    if (!input || !input.value.trim())) return;
+    if (!input || !input.value.trim()) return;
 
     const content = input.value.trim();
     if (useSupabase) {
@@ -4356,7 +4356,7 @@ async function submitChantierFeedPost() {
 
 async function submitChantierMemo() {
     const input = document.getElementById('chantier-memo-input');
-    if (!input || !input.value.trim())) return;
+    if (!input || !input.value.trim()) return;
 
     const content = input.value.trim();
     if (useSupabase && supabaseClient) {
@@ -5728,7 +5728,7 @@ function formatDateFr(dateStr) {
     return `${parts[2]}/${parts[1]}/${parts[0]}`;
 }
 
-function deleteDelegation(delId) {
+async function deleteDelegation(delId) {
     if (await showCustomConfirm("Voulez-vous vraiment annuler cette délégation de droits ?")) {
         delegations = delegations.filter(d => d.id !== delId);
         localStorage.setItem('foreman_delegations', JSON.stringify(delegations));
