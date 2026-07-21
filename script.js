@@ -72,6 +72,101 @@ if (typeof window !== 'undefined') {
         document.body.appendChild(div);
     });
 }
+// ── MODALES CUSTOM ──────────────────────────────────────────────────────────
+function showCustomAlert(message, type = 'info') {
+    return new Promise(resolve => {
+        const modal = document.getElementById('custom-alert-modal');
+        const iconDiv = document.getElementById('custom-alert-icon');
+        const msgEl = document.getElementById('custom-alert-message');
+        const btnOk = document.getElementById('btn-custom-alert-ok');
+        const titleEl = document.getElementById('custom-alert-title');
+        
+        if (!modal) {
+            window._nativeAlert(message);
+            resolve();
+            return;
+        }
+
+        msgEl.textContent = message;
+        
+        let iconHtml = '';
+        let iconColor = '';
+        let title = '';
+
+        if (type === 'error') {
+            iconColor = 'var(--danger)';
+            title = 'Erreur';
+            iconHtml = `<svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="${iconColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
+            btnOk.style.background = 'var(--danger)';
+        } else if (type === 'success') {
+            iconColor = 'var(--success)';
+            title = 'Succès';
+            iconHtml = `<svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="${iconColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
+            btnOk.style.background = 'var(--success)';
+        } else {
+            iconColor = 'var(--accent)';
+            title = 'Information';
+            iconHtml = `<svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="${iconColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+            btnOk.style.background = 'var(--accent)';
+        }
+
+        iconDiv.style.color = iconColor;
+        iconDiv.innerHTML = iconHtml;
+        titleEl.textContent = title;
+
+        modal.style.display = 'flex';
+        btnOk.focus();
+
+        const close = () => {
+            modal.style.display = 'none';
+            btnOk.removeEventListener('click', close);
+            resolve();
+        };
+
+        btnOk.addEventListener('click', close);
+    });
+}
+
+function showCustomConfirm(message) {
+    return new Promise(resolve => {
+        const modal = document.getElementById('custom-confirm-modal');
+        const msgEl = document.getElementById('custom-confirm-message');
+        const btnOk = document.getElementById('btn-custom-confirm-ok');
+        const btnCancel = document.getElementById('btn-custom-confirm-cancel');
+        
+        if (!modal) {
+            resolve(window._nativeConfirm(message));
+            return;
+        }
+
+        msgEl.textContent = message;
+        modal.style.display = 'flex';
+        
+        const cleanup = () => {
+            modal.style.display = 'none';
+            btnOk.removeEventListener('click', onOk);
+            btnCancel.removeEventListener('click', onCancel);
+        };
+
+        const onOk = () => { cleanup(); resolve(true); };
+        const onCancel = () => { cleanup(); resolve(false); };
+
+        btnOk.addEventListener('click', onOk);
+        btnCancel.addEventListener('click', onCancel);
+    });
+}
+
+// Override global alert
+window._nativeAlert = window.alert;
+window.alert = (msg) => {
+    let type = 'info';
+    if (msg && msg.toString().toLowerCase().includes('erreur')) type = 'error';
+    if (msg && msg.toString().toLowerCase().includes('succès')) type = 'success';
+    if (msg && msg.toString().toLowerCase().includes('succes')) type = 'success';
+    showCustomAlert(msg, type);
+};
+window._nativeConfirm = window.confirm;
+// ─────────────────────────────────────────────────────────────────────────────
 
 // BTP Admin Scheduling System State
 let users = [
@@ -427,7 +522,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     isAdmin = true;
 
     const handleLogout = async () => {
-        if (confirm('Voulez-vous vraiment vous déconnecter ?')) {
+        if (await showCustomConfirm('Voulez-vous vraiment vous déconnecter ?')) {
             if (useSupabase && supabaseClient) {
                 await supabaseClient.auth.signOut();
             }
@@ -1503,7 +1598,7 @@ function renderPlanning() {
             `;
 
             projectRow.addEventListener('click', (e) => {
-                if (e.target.closest('.btn') || e.target.closest('.project-add-companion-btn')) return;
+                if (e.target.closest('.btn') || e.target.closest('.project-add-companion-btn'))) return;
                 collapsedProjects[ch.id] = !collapsedProjects[ch.id];
                 renderPlanning();
             });
@@ -1881,7 +1976,7 @@ function renderPlanning() {
 }
 
 async function deleteUser(userId) {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
+    if (await showCustomConfirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
         if (useSupabase) {
             await supabaseClient.from('utilisateurs').delete().eq('id', userId);
             await loadDataFromSupabase();
@@ -1904,7 +1999,7 @@ async function deleteUser(userId) {
 
 // Project Actions: delete project
 async function deleteChantier(chantierId) {
-    if (confirm('Êtes-vous sûr de vouloir supprimer ce chantier ?')) {
+    if (await showCustomConfirm('Êtes-vous sûr de vouloir supprimer ce chantier ?')) {
         if (useSupabase) {
             await supabaseClient.from('chantiers').delete().eq('id', chantierId);
             await loadDataFromSupabase();
@@ -2241,7 +2336,7 @@ async function deleteEditAssignment() {
     const chantierId = document.getElementById('edit-assign-chantier-id').value;
     const userId = document.getElementById('edit-assign-user-id').value;
 
-    if (confirm('Êtes-vous sûr de vouloir supprimer cette affectation ?')) {
+    if (await showCustomConfirm('Êtes-vous sûr de vouloir supprimer cette affectation ?')) {
         await removeCompanionFromPlanning(chantierId, userId);
         document.getElementById('edit-assign-modal').classList.remove('show');
     }
@@ -3105,7 +3200,7 @@ function renderHoursRows() {
     if (currentHoursView === 'chantiers') {
         chantiers.forEach(ch => {
             if (hoursSelectFilterVal !== 'all' && hoursSelectFilterVal !== ch.id) return;
-            if (query && !ch.name.toLowerCase().includes(query) && !ch.client.toLowerCase().includes(query)) return;
+            if (query && !ch.name.toLowerCase().includes(query) && !ch.client.toLowerCase().includes(query))) return;
 
             // State Filter
             if (hoursStatusFilterVal !== 'all') {
@@ -4231,7 +4326,7 @@ function renderChantierDetail() {
 
 async function submitChantierFeedPost() {
     const input = document.getElementById('chantier-new-post-input');
-    if (!input || !input.value.trim()) return;
+    if (!input || !input.value.trim())) return;
 
     const content = input.value.trim();
     if (useSupabase) {
@@ -4261,7 +4356,7 @@ async function submitChantierFeedPost() {
 
 async function submitChantierMemo() {
     const input = document.getElementById('chantier-memo-input');
-    if (!input || !input.value.trim()) return;
+    if (!input || !input.value.trim())) return;
 
     const content = input.value.trim();
     if (useSupabase && supabaseClient) {
@@ -4310,7 +4405,7 @@ async function submitChantierMemo() {
 
 async function deleteChantierMemo(e, memoId) {
     if (e) e.stopPropagation();
-    if (confirm('Êtes-vous sûr de vouloir supprimer ce mémo ?')) {
+    if (await showCustomConfirm('Êtes-vous sûr de vouloir supprimer ce mémo ?')) {
         if (useSupabase && supabaseClient && !isNaN(Number(memoId))) {
             try {
                 const { error } = await supabaseClient
@@ -4827,7 +4922,7 @@ async function saveMemo(e) {
 }
 
 async function deleteMemo(id) {
-    if (confirm('Êtes-vous sûr de vouloir supprimer ce mémo ?')) {
+    if (await showCustomConfirm('Êtes-vous sûr de vouloir supprimer ce mémo ?')) {
         if (useSupabase && supabaseClient && !isNaN(Number(id))) {
             try {
                 const { error } = await supabaseClient
@@ -5634,7 +5729,7 @@ function formatDateFr(dateStr) {
 }
 
 function deleteDelegation(delId) {
-    if (confirm("Voulez-vous vraiment annuler cette délégation de droits ?")) {
+    if (await showCustomConfirm("Voulez-vous vraiment annuler cette délégation de droits ?")) {
         delegations = delegations.filter(d => d.id !== delId);
         localStorage.setItem('foreman_delegations', JSON.stringify(delegations));
         
@@ -6051,7 +6146,7 @@ function renderDiffusionModal() {
                 alert('Sélectionnez au moins un ouvrier.');
                 return;
             }
-            if (!confirm(`Envoyer le planning par SMS à ${checked.length} ouvrier(s) ?`)) return;
+            if (!(await showCustomConfirm(`Envoyer le planning par SMS à ${checked.length} ouvrier(s) ?`))) return;
             
             const messages = [];
             checked.forEach(cb => {
@@ -6116,7 +6211,7 @@ async function sendSingleSMSViaBackend(workerId, phone, mode) {
         text = getWorkerWeeklyMessage(workerId, 'sms') + `\n\n🌐 ` + getGeneralPlanningLink();
     }
 
-    if (!confirm(`Envoyer ce SMS à ${phone} ?`)) return;
+    if (!(await showCustomConfirm(`Envoyer ce SMS à ${phone} ?`))) return;
 
     try {
         const response = await fetch('/api/send-sms-bulk', {
@@ -6193,7 +6288,7 @@ function initDiffusionFeatures() {
                 return;
             }
 
-            if (!confirm(`Voulez-vous vraiment envoyer le planning par SMS aux ${messages.length} ouvriers ?`)) {
+            if (!(await showCustomConfirm(`Voulez-vous vraiment envoyer le planning par SMS aux ${messages.length} ouvriers ?`))) {
                 return;
             }
 
