@@ -435,19 +435,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    // Check URL parameters for easy testing/debug (ex: ?role=chef or ?role=ouvrier)
+    // Check URL parameters or stored session for role persistence across page refreshes
     const urlParams = new URLSearchParams(window.location.search);
-    const debugRole = urlParams.get('role');
+    let activeRole = urlParams.get('role') || sessionStorage.getItem('activeUserRole');
 
-    if (debugRole) {
+    if (activeRole) {
+        sessionStorage.setItem('activeUserRole', activeRole);
         await loadDataFromSupabase();
-        isAdmin = false;
-        if (debugRole === 'chef') {
+        if (activeRole === 'chef') {
             isChef = true;
+            isAdmin = false;
+            isOuvrier = false;
             currentUserProfile = users.find(u => (u.role || '').toLowerCase().includes('chef')) || users[2]; // Luc Petit
-        } else {
+        } else if (activeRole === 'ouvrier') {
             isOuvrier = true;
+            isAdmin = false;
+            isChef = false;
             currentUserProfile = users.find(u => (u.role || '').toLowerCase().includes('maçon') || (u.role || '').toLowerCase().includes('compagnon')) || users[3]; // Pierre Dubois
+        } else if (activeRole === 'admin') {
+            isAdmin = true;
+            isChef = false;
+            isOuvrier = false;
+            currentUserProfile = users[0];
         }
     } else if (useSupabase && supabaseClient) {
         const { data: { user } } = await supabaseClient.auth.getUser();
@@ -499,6 +508,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     isChef = false;
                 }
             }
+
+            // Save active role into sessionStorage for persistence
+            const currentDetectedRole = isChef ? 'chef' : isOuvrier ? 'ouvrier' : 'admin';
+            sessionStorage.setItem('activeUserRole', currentDetectedRole);
 
             // Update profile info in sidebar
             const profileName = document.getElementById('profile-name');
