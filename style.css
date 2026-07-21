@@ -2737,6 +2737,16 @@ td:hover .planning-add-btn {
         flex-direction: column;
         gap: 1px;
     }
+    .week-nav-side-label {
+        display: none !important;
+    }
+    .hours-week-nav-container {
+        padding: 10px 12px !important;
+    }
+    .week-nav-center {
+        width: 100% !important;
+        justify-content: space-between !important;
+    }
 }
 
 .hour-cell-value {
