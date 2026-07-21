@@ -1896,7 +1896,8 @@
 
     <!-- Custom Alert Modal -->
     <div id="custom-alert-modal" class="modal-backdrop" style="display: none; z-index: 99999; pointer-events: all; opacity: 1;">
-        <div class="modal" style="max-width: 400px; border-radius: 12px; padding: 24px; text-align: center;">
+        <div class="modal" style="position: relative; max-width: 400px; border-radius: 12px; padding: 24px; text-align: center;">
+            <button id="btn-custom-alert-close" type="button" style="position: absolute; top: 12px; right: 12px; background: none; border: none; font-size: 24px; line-height: 1; cursor: pointer; color: var(--gray-muted);">&times;</button>
             <div id="custom-alert-icon" style="margin-bottom: 16px; display: flex; justify-content: center;">
                 <!-- SVG Icon injected via JS -->
             </div>

@@ -117,13 +117,28 @@ function showCustomAlert(message, type = 'info') {
         modal.style.display = 'flex';
         btnOk.focus();
 
+        let autoCloseTimeout;
+
         const close = () => {
             modal.style.display = 'none';
             btnOk.removeEventListener('click', close);
+            const btnCloseCross = document.getElementById('btn-custom-alert-close');
+            if (btnCloseCross) btnCloseCross.removeEventListener('click', close);
+            if (autoCloseTimeout) clearTimeout(autoCloseTimeout);
             resolve();
         };
 
         btnOk.addEventListener('click', close);
+        
+        const btnCloseCross = document.getElementById('btn-custom-alert-close');
+        if (btnCloseCross) btnCloseCross.addEventListener('click', close);
+
+        // Auto-close success alerts after 2 seconds
+        if (type === 'success') {
+            autoCloseTimeout = setTimeout(() => {
+                close();
+            }, 2000);
+        }
     });
 }
 
