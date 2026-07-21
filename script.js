@@ -5957,17 +5957,7 @@ function renderDiffusionModal() {
     const tbody = document.getElementById('diffusion-table-tbody');
     if (!tbody) return;
 
-    // Get active channel selection
-    const checkedRadio = document.querySelector('input[name="diffusion-channel"]:checked');
-    const channel = checkedRadio ? checkedRadio.value : 'whatsapp';
-
-    // Toggle bulk button visibility based on channel
-    const btnBulkSMS = document.getElementById('btn-send-bulk-sms');
-    if (btnBulkSMS) {
-        btnBulkSMS.style.display = (channel === 'sms') ? '' : 'none';
-    }
-
-    // We filter users to only show companions/workers (ouvriers)
+    // Filtrer uniquement les ouvriers/compagnons
     const companions = users.filter(u => {
         const role = (u.role || '').toLowerCase();
         return !role.includes('chef') && !role.includes('admin') && !role.includes('conducteur') && !role.includes('propri');
@@ -5976,75 +5966,125 @@ function renderDiffusionModal() {
     if (companions.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="3" style="text-align: center; color: var(--gray-muted); padding: 20px;">Aucun ouvrier enregistré.</td>
+                <td colspan="4" style="text-align: center; color: var(--gray-muted); padding: 20px;">Aucun ouvrier enregistré.</td>
             </tr>
         `;
         return;
     }
 
+    // Générer les lignes avec cases à cocher
     tbody.innerHTML = companions.map(u => {
         const phone = u.phone || '';
-        
-        let actionButtonsHtml = '';
-        if (channel === 'whatsapp') {
-            actionButtonsHtml = `
-                <button class="btn btn-secondary" onclick="sendPersonalPlanning('${u.id}', '${phone}')" style="padding: 6px 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
-                    ${SVG_MEN} Perso
-                </button>
-                <button class="btn btn-secondary" onclick="sendGeneralPlanning('${phone}')" style="padding: 6px 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
-                    ${SVG_MENS} Général
-                </button>
-                <button class="btn btn-primary" onclick="sendBothPlannings('${u.id}', '${phone}')" style="padding: 6px 12px; font-size: 11px; background: var(--accent); display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
-                    ${SVG_SPREAD} Les deux
-                </button>
-            `;
-        } else {
-            // SMS buttons
-            actionButtonsHtml = `
-                <button class="btn btn-secondary" onclick="sendSingleSMSViaBackend('${u.id}', '${phone}', 'perso')" style="padding: 6px 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
-                    ${SVG_MEN} SMS Perso
-                </button>
-                <button class="btn btn-secondary" onclick="sendSingleSMSViaBackend('${u.id}', '${phone}', 'general')" style="padding: 6px 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
-                    ${SVG_MENS} SMS Général
-                </button>
-                <button class="btn btn-primary" onclick="sendSingleSMSViaBackend('${u.id}', '${phone}', 'both')" style="padding: 6px 12px; font-size: 11px; background: var(--primary); display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
-                    ${SVG_SPREAD} SMS Les deux
-                </button>
-            `;
-        }
+        const name = `${u.firstname} ${u.lastname}`;
+        const whatsappLink = phone ? `https://wa.me/${formatPhoneForWhatsApp(phone)}?text=${encodeURIComponent(getWorkerWeeklyMessage(u.id, 'whatsapp'))}` : '';
 
         return `
-            <tr>
-                <td style="font-weight: 700; color: var(--text-primary); padding: 12px 16px;">${u.firstname} ${u.lastname}</td>
-                <td style="padding: 8px 16px;">
-                    <input type="text" class="phone-edit-input" data-user-id="${u.id}" value="${phone}" placeholder="Non renseigné" style="width: 100%; max-width: 160px; padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px; font-weight: 500; transition: background-color 0.3s ease;">
+            <tr class="diffusion-row" data-user-id="${u.id}" style="transition: background 0.15s;">
+                <td style="text-align: center; padding: 10px 12px;">
+                    <input type="checkbox" class="diffusion-user-checkbox" data-user-id="${u.id}" data-phone="${phone}" data-name="${name}"
+                        style="accent-color: var(--accent); width: 17px; height: 17px; cursor: pointer;"
+                        ${!phone ? 'disabled title="Pas de numéro de téléphone"' : ''}>
                 </td>
-                <td style="text-align: center; padding: 12px 16px;">
-                    <div style="display: flex; gap: 8px; justify-content: center;">
-                        ${actionButtonsHtml}
+                <td style="font-weight: 700; color: var(--text-primary); padding: 10px 16px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; flex-shrink: 0;">
+                            ${u.firstname.charAt(0)}${u.lastname.charAt(0)}
+                        </div>
+                        <span>${name}</span>
                     </div>
+                </td>
+                <td style="padding: 8px 16px;">
+                    <input type="text" class="phone-edit-input" data-user-id="${u.id}" value="${phone}" placeholder="Non renseigné"
+                        style="width: 100%; max-width: 150px; padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px; transition: background-color 0.3s ease;">
+                </td>
+                <td style="text-align: center; padding: 10px 16px;">
+                    ${phone
+                        ? `<a href="${whatsappLink}" target="_blank"
+                              style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: #dcfce7; color: #15803d; font-weight: 600; font-size: 12px; border-radius: 99px; text-decoration: none; transition: background 0.15s;"
+                              onmouseover="this.style.background='#bbf7d0'" onmouseout="this.style.background='#dcfce7'">
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="-5 -10 110 135" width="14" height="14" fill="currentColor"><path d="m33.379 79.781c5.0781 2.8008 10.801 4.2695 16.621 4.2695 19.02 0 34.5-15.48 34.5-34.5s-15.48-34.5-34.5-34.5-34.5 15.48-34.5 34.5c0 6.1094 1.6094 12.09 4.6797 17.352l-4.3906 18.051zm1.832-46.352c0.73047-0.67188 1.6797-1.0312 2.6719-1.0312h1.0508c1.3906 0 2.6289 0.87109 3.1016 2.1719l2.1484 5.9219c0.19922 0.55859 0.10156 1.1797-0.26953 1.6484l-1.6992 2.1211c-0.67188 0.82812-0.85156 1.9609-0.46094 2.9492 2.0586 5.1797 8.1797 8.8203 11.379 10.422 1.1602 0.57813 2.5508 0.35938 3.4688-0.55078l1.8789-1.8789c0.44922-0.44922 1.1211-0.60938 1.7305-0.42188l5.6992 1.8203c1.3711 0.44141 2.3008 1.7109 2.3008 3.1484v1.4492c0 1.0586-0.42188 2.0781-1.1719 2.8281-5.5508 5.4805-14.762 1.4609-20.73-2.1992-4.3008-2.6406-8.0508-6.1094-10.84-10.32-6.75-10.188-2.6484-15.898-0.25781-18.078z"/></svg>
+                              Envoyer
+                           </a>`
+                        : `<span style="font-size: 11px; color: var(--gray-muted); font-style: italic;">Pas de numéro</span>`
+                    }
                 </td>
             </tr>
         `;
     }).join('');
 
-    // Bind change listeners to inline phone inputs
-    const phoneInputs = tbody.querySelectorAll('.phone-edit-input');
-    phoneInputs.forEach(input => {
+    // ── Tout sélectionner ──────────────────────────────────────────────────────
+    const checkAll = document.getElementById('diffusion-check-all');
+    const updateCounter = () => {
+        const checked = document.querySelectorAll('.diffusion-user-checkbox:checked');
+        const countEl = document.getElementById('diffusion-selected-count');
+        if (countEl) countEl.textContent = checked.length;
+        // Grisé si 0 sélectionné
+        const btn = document.getElementById('btn-send-grouped');
+        if (btn) btn.style.opacity = checked.length === 0 ? '0.5' : '1';
+    };
+
+    if (checkAll) {
+        checkAll.checked = false;
+        checkAll.addEventListener('change', () => {
+            document.querySelectorAll('.diffusion-user-checkbox:not(:disabled)').forEach(cb => {
+                cb.checked = checkAll.checked;
+            });
+            updateCounter();
+        });
+    }
+
+    // Listeners sur chaque checkbox
+    tbody.querySelectorAll('.diffusion-user-checkbox').forEach(cb => {
+        cb.addEventListener('change', () => {
+            updateCounter();
+            // Décocher "Tout" si un est décoché
+            if (checkAll && !cb.checked) checkAll.checked = false;
+        });
+    });
+    updateCounter();
+
+    // ── Envoi groupé : ouvre les liens WhatsApp en séquence ──────────────────
+    const btnGrouped = document.getElementById('btn-send-grouped');
+    if (btnGrouped) {
+        // Remplacer l'event pour éviter les doublons
+        const newBtn = btnGrouped.cloneNode(true);
+        btnGrouped.parentNode.replaceChild(newBtn, btnGrouped);
+        newBtn.addEventListener('click', () => {
+            const checked = document.querySelectorAll('.diffusion-user-checkbox:checked');
+            if (checked.length === 0) {
+                alert('Sélectionne au moins un ouvrier.');
+                return;
+            }
+            let delay = 0;
+            checked.forEach(cb => {
+                const userId = cb.getAttribute('data-user-id');
+                const phone = cb.getAttribute('data-phone');
+                const formattedPhone = formatPhoneForWhatsApp(phone);
+                const message = getWorkerWeeklyMessage(userId, 'whatsapp');
+                const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+                // Ouvrir les onglets avec un léger décalage pour éviter le blocage du navigateur
+                setTimeout(() => { window.open(url, '_blank'); }, delay);
+                delay += 600;
+            });
+        });
+    }
+
+    // ── Éditeurs de téléphone inline ──────────────────────────────────────────
+    tbody.querySelectorAll('.phone-edit-input').forEach(input => {
         input.addEventListener('change', async (e) => {
             const userId = e.target.getAttribute('data-user-id');
             const newPhone = e.target.value.trim();
-            
-            // Visual feedback - yellow background while updating
             e.target.style.backgroundColor = '#fef08a';
-            
             await updateWorkerPhone(userId, newPhone);
-            
-            // Visual feedback - light green background on success
             e.target.style.backgroundColor = '#dcfce7';
-            setTimeout(() => {
-                e.target.style.backgroundColor = '';
-            }, 1000);
+            setTimeout(() => { e.target.style.backgroundColor = ''; }, 1000);
+            // Mettre à jour la data-phone du checkbox correspondant
+            const cb = tbody.querySelector(`.diffusion-user-checkbox[data-user-id="${userId}"]`);
+            if (cb) {
+                cb.setAttribute('data-phone', newPhone);
+                if (newPhone) { cb.disabled = false; cb.title = ''; }
+            }
+            renderDiffusionModal(); // Re-render pour afficher le lien
         });
     });
 }
