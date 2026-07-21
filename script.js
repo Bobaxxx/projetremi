@@ -3838,7 +3838,7 @@ function renderChantierDetail() {
                         <h2 style="font-family: var(--font-heading); font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 0;">${ch.name}</h2>
                         <span class="status-pill status-active" style="background-color: #d1fae5; color: #065f46; font-weight: 600; font-size: 11px; padding: 2px 8px; border-radius: 9999px;">${ch.status}</span>
                     </div>
-                    ${ch.entreprise ? `<div style="font-size: 13px; color: var(--gray-muted); margin-top: 4px;">Entreprise : <strong>${ch.entreprise}</strong></div>` : ''}
+                    ${ch.entreprise || (isAdmin || isChef) ? `<div style="font-size: 13px; color: var(--gray-muted); margin-top: 4px;">Entreprise : <strong>${ch.entreprise || 'Non spécifiée'}</strong></div>` : ''}
                 </div>
             </div>
             <div style="display: flex; align-items: center; gap: 12px;">
@@ -3850,7 +3850,7 @@ function renderChantierDetail() {
                     </svg>
                     Exporter le rapport PDF
                 </button>
-                ${isAdmin ? `
+                ${(isAdmin || isChef) ? `
                 <button class="btn btn-primary" onclick="openEditChantierModal('${ch.id}')" style="font-size: 13px; display: flex; align-items: center; gap: 6px; background-color: var(--accent);">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
