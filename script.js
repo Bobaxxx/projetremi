@@ -435,41 +435,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    // Check URL parameters or stored session for role persistence across page refreshes
+    // Check URL parameters for explicit test/debug role override (ex: ?role=chef or ?role=ouvrier)
     const urlParams = new URLSearchParams(window.location.search);
-    let activeRole = urlParams.get('role') || sessionStorage.getItem('activeUserRole');
+    const debugRole = urlParams.get('role');
 
-    if (activeRole) {
-        sessionStorage.setItem('activeUserRole', activeRole);
-        await loadDataFromSupabase();
-        if (activeRole === 'chef') {
-            isChef = true;
-            isAdmin = false;
-            isOuvrier = false;
-            currentUserProfile = users.find(u => (u.role || '').toLowerCase().includes('chef')) || users[2]; // Luc Petit
-        } else if (activeRole === 'ouvrier') {
-            isOuvrier = true;
-            isAdmin = false;
-            isChef = false;
-            currentUserProfile = users.find(u => (u.role || '').toLowerCase().includes('maçon') || (u.role || '').toLowerCase().includes('compagnon')) || users[3]; // Pierre Dubois
-        } else if (activeRole === 'admin') {
-            isAdmin = true;
-            isChef = false;
-            isOuvrier = false;
-            currentUserProfile = users[0];
-        }
-    } else if (useSupabase && supabaseClient) {
+    if (useSupabase && supabaseClient && !debugRole) {
         const { data: { user } } = await supabaseClient.auth.getUser();
         if (user) {
-            // Format email prefix as name if no metadata, or extract metadata
+            // Format email prefix as name if no metadata
             const name = user.user_metadata?.full_name || user.email.split('@')[0];
             const formattedName = name.split(/[\._]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
             // Load dynamic data first to find the user in DB
             await loadDataFromSupabase();
 
-            // Find matching user in the database
-            currentUserProfile = users.find(u => u.id === user.id);
+            // Find matching user in the database by ID or Email
+            const emailLower = (user.email || '').toLowerCase();
+            currentUserProfile = users.find(u => u.id === user.id || (u.email && u.email.toLowerCase() === emailLower));
+            
             if (!currentUserProfile) {
                 // Try fallback matching by name
                 currentUserProfile = users.find(u => {
@@ -496,8 +479,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     isChef = false;
                 }
             } else {
-                // If profile not matched in DB and email does not contain "admin", default to Ouvrier mode for security
-                const emailLower = (user.email || '').toLowerCase();
+                // User logged in via Supabase but not in static users list
                 if (emailLower.includes('admin')) {
                     isAdmin = true;
                     isChef = false;
@@ -507,11 +489,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                     isAdmin = false;
                     isChef = false;
                 }
+                
+                // Create temporary profile object for display
+                const parts = formattedName.split(' ');
+                currentUserProfile = {
+                    id: user.id,
+                    firstname: parts[0] || 'Compagnon',
+                    lastname: parts.slice(1).join(' ') || '',
+                    role: isAdmin ? 'Administrateur' : 'Compagnon',
+                    status: 'Actif'
+                };
             }
-
-            // Save active role into sessionStorage for persistence
-            const currentDetectedRole = isChef ? 'chef' : isOuvrier ? 'ouvrier' : 'admin';
-            sessionStorage.setItem('activeUserRole', currentDetectedRole);
 
             // Update profile info in sidebar
             const profileName = document.getElementById('profile-name');
@@ -519,16 +507,33 @@ document.addEventListener('DOMContentLoaded', async () => {
             const welcomeText = document.querySelector('.welcome-text');
             const avatar = document.querySelector('.sidebar-footer .avatar');
 
-            const displayName = currentUserProfile ? `${currentUserProfile.firstname} ${currentUserProfile.lastname}` : formattedName;
+            const displayName = `${currentUserProfile.firstname} ${currentUserProfile.lastname}`.trim();
 
             if (profileName) profileName.textContent = displayName;
-            if (profileRole) profileRole.textContent = currentUserProfile ? currentUserProfile.role : 'Membre équipe';
+            if (profileRole) profileRole.textContent = currentUserProfile.role || (isOuvrier ? 'Compagnon' : 'Administrateur');
             if (welcomeText) welcomeText.textContent = `Bonjour, ${displayName}`;
             if (avatar) {
                 avatar.textContent = displayName.charAt(0).toUpperCase();
             }
         }
-
+    } else if (debugRole) {
+        await loadDataFromSupabase();
+        if (debugRole === 'chef') {
+            isChef = true;
+            isAdmin = false;
+            isOuvrier = false;
+            currentUserProfile = users.find(u => (u.role || '').toLowerCase().includes('chef')) || users[2];
+        } else if (debugRole === 'ouvrier') {
+            isOuvrier = true;
+            isAdmin = false;
+            isChef = false;
+            currentUserProfile = users.find(u => (u.role || '').toLowerCase().includes('maçon') || (u.role || '').toLowerCase().includes('compagnon')) || users[3];
+        } else if (debugRole === 'admin') {
+            isAdmin = true;
+            isChef = false;
+            isOuvrier = false;
+            currentUserProfile = users[0];
+        }
     }
 
     // Global Logout and Interaction bindings
