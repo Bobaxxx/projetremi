@@ -754,6 +754,33 @@
                             </table>
                         </div>
                     </div>
+                    
+                    <!-- New Section: Gestion des Entreprises -->
+                    <div style="background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; margin-top: 16px;">
+                        <h3 style="font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 16px;">Gestion des Entreprises</h3>
+                        <p style="font-size: 13.5px; color: var(--gray-muted); line-height: 1.5; margin-bottom: 16px;">Créez ici les entreprises qui pourront être affectées à vos chantiers.</p>
+                        
+                        <div style="display: flex; gap: 12px; margin-bottom: 24px;">
+                            <input type="text" id="new-entreprise-name" class="form-input" style="flex: 1;" placeholder="Nom de la nouvelle entreprise (ex: BTP Dubois)">
+                            <button class="btn btn-primary" id="btn-add-entreprise-settings" style="white-space: nowrap;">Ajouter</button>
+                        </div>
+                        
+                        <div class="table-container" style="box-shadow: none; border: 1px solid var(--border-color); border-radius: 8px;">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nom de l'entreprise</th>
+                                        <th style="width: 80px; text-align: center;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="settings-entreprises-table-tbody">
+                                    <tr>
+                                        <td colspan="2" style="text-align: center; color: var(--gray-muted); font-style: italic; padding: 20px;">Chargement des entreprises...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </section>
 
             </main>

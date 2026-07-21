@@ -734,6 +734,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderHours();
     renderDelegations();
     initDelegationFeatures();
+    renderEntreprisesSettings();
+    initEntrepriseSettingsFeatures();
     initDiffusionFeatures();
 
     // Init onboarding flow if required (online version checks DB directly)
@@ -5913,6 +5915,97 @@ function initDelegationFeatures() {
             });
         }
     });
+}
+
+// =============================================================================
+// SETTINGS: ENTREPRISES LOGIC
+// =============================================================================
+function renderEntreprisesSettings() {
+    const tbody = document.getElementById('settings-entreprises-table-tbody');
+    if (!tbody) return;
+
+    if (entreprises.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="2" style="text-align: center; color: var(--gray-muted); font-style: italic; padding: 20px;">Aucune entreprise configurée.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = entreprises.map(ent => `
+        <tr>
+            <td style="font-weight: 500; padding: 12px 16px;">${ent.name}</td>
+            <td style="text-align: center; padding: 12px 16px;">
+                <button class="action-btn text-danger" onclick="deleteEntrepriseSettings('${ent.name.replace(/'/g, "\\'")}')" title="Supprimer">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+async function addEntrepriseSettings() {
+    const input = document.getElementById('new-entreprise-name');
+    if (!input) return;
+    const name = input.value.trim();
+    
+    if (!name) {
+        alert("Veuillez saisir un nom d'entreprise.");
+        return;
+    }
+
+    if (entreprises.find(e => e.name.toLowerCase() === name.toLowerCase())) {
+        alert("Cette entreprise existe déjà.");
+        return;
+    }
+
+    const newEnt = { name };
+
+    if (useSupabase && supabaseClient) {
+        const { error } = await supabaseClient.from('entreprises').insert([newEnt]);
+        if (error) {
+            console.error("Erreur ajout entreprise:", error);
+            alert("Erreur lors de l'ajout en base de données.");
+            return;
+        }
+        await loadDataFromSupabase(); // Reload to get fresh data
+    } else {
+        entreprises.push(newEnt);
+    }
+
+    input.value = '';
+    populateEntreprisesSelects();
+    renderEntreprisesSettings();
+}
+
+async function deleteEntrepriseSettings(name) {
+    const confirmDelete = await showCustomConfirm(`Voulez-vous vraiment supprimer l'entreprise "${name}" ?`);
+    if (!confirmDelete) return;
+
+    if (useSupabase && supabaseClient) {
+        const { error } = await supabaseClient.from('entreprises').delete().eq('name', name);
+        if (error) {
+            console.error("Erreur suppression entreprise:", error);
+            alert("Erreur lors de la suppression en base de données.");
+            return;
+        }
+        await loadDataFromSupabase();
+    } else {
+        entreprises = entreprises.filter(e => e.name !== name);
+    }
+
+    populateEntreprisesSelects();
+    renderEntreprisesSettings();
+}
+
+function initEntrepriseSettingsFeatures() {
+    const btnAdd = document.getElementById('btn-add-entreprise-settings');
+    if (btnAdd) {
+        btnAdd.addEventListener('click', addEntrepriseSettings);
+    }
+    const inputName = document.getElementById('new-entreprise-name');
+    if (inputName) {
+        inputName.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addEntrepriseSettings();
+        });
+    }
 }
 
 // =============================================================================
