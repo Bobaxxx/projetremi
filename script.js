@@ -574,6 +574,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (currentUserProfile) {
                 // Déconnexion forcée si le compte est inactif
                 if (currentUserProfile.status && currentUserProfile.status.toLowerCase() !== 'actif') {
+                    const gl = document.getElementById('global-loader');
+                    if (gl) gl.remove(); // Enlever l'écran de chargement pour pouvoir voir l'alerte
                     await showCustomAlert("Votre compte a été désactivé par un administrateur. Vous n'avez plus accès à l'application.", "error");
                     if (useSupabase && supabaseClient) {
                         await supabaseClient.auth.signOut();
