@@ -5956,7 +5956,10 @@ async function addEntrepriseSettings() {
         return;
     }
 
-    const newEnt = { name };
+    const newEnt = { 
+        id: 'e_' + Date.now() + Math.random().toString(36).substring(2, 7),
+        name: name 
+    };
 
     if (useSupabase && supabaseClient) {
         const { error } = await supabaseClient.from('entreprises').insert([newEnt]);
