@@ -740,6 +740,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (useSupabase && supabaseClient && isAdmin) {
         initOnboarding();
     }
+
+    // Hide global loader gracefully once everything is ready
+    const globalLoader = document.getElementById('global-loader');
+    if (globalLoader) {
+        // Small delay to ensure all DOM renders are completed visually
+        setTimeout(() => {
+            globalLoader.style.opacity = '0';
+            globalLoader.style.visibility = 'hidden';
+            setTimeout(() => globalLoader.remove(), 400); // Remove from DOM after fade out
+        }, 100);
+    }
 });
 
 // Clock update logic
