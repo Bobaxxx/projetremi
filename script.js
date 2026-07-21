@@ -5304,13 +5304,44 @@ function applyRolePermissions() {
         return;
     }
 
-    // ─── NON-ADMIN (Chef / Ouvrier) ───────────────────────────────────────────
+    // ─── CHEF DE CHANTIER ─────────────────────────────────────────────────────
+    if (isChef) {
+        // Chef sees the admin dashboard (full planning view), NOT the worker card
+        const adminView = document.getElementById('admin-dashboard-view');
+        const workerView = document.getElementById('worker-dashboard-view');
+        if (adminView) adminView.style.display = 'block';
+        if (workerView) workerView.style.display = 'none';
+
+        // Planning toggle labels renamed for chef
+        if (toggleChantiers && toggleUsers) {
+            toggleChantiers.childNodes[toggleChantiers.childNodes.length - 1].textContent = ' Planning Général';
+            toggleUsers.childNodes[toggleUsers.childNodes.length - 1].textContent = ' Mon planning';
+            currentPlanningView = 'users';
+            toggleChantiers.classList.remove('active');
+            toggleUsers.classList.add('active');
+        }
+
+        // Chef: hide user management tab
+        const tabsToHide = ['users'];
+        tabsToHide.forEach(tab => {
+            const el = document.querySelector(`.sidebar-nav [data-tab="${tab}"]`);
+            if (el) el.style.display = 'none';
+        });
+
+        // Chef can use diffusion but not add users/chantiers
+        if (btnAddUser) btnAddUser.style.display = 'none';
+        if (btnAddChantier) btnAddChantier.style.display = 'none';
+
+        return;
+    }
+
+    // ─── OUVRIER ──────────────────────────────────────────────────────────────
     const adminView = document.getElementById('admin-dashboard-view');
     const workerView = document.getElementById('worker-dashboard-view');
     if (adminView) adminView.style.display = 'none';
     if (workerView) workerView.style.display = 'flex';
 
-    // Planning toggle labels renamed for non-admin
+    // Planning toggle labels renamed for ouvrier
     if (toggleChantiers && toggleUsers) {
         toggleChantiers.childNodes[toggleChantiers.childNodes.length - 1].textContent = ' Planning Général';
         toggleUsers.childNodes[toggleUsers.childNodes.length - 1].textContent = ' Mon planning';
