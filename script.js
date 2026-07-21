@@ -476,6 +476,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (roleLower.includes('chef') || typeLower.includes('chef') || roleLower.includes('conducteur')) {
                     isChef = true;
                     isAdmin = false;
+                    isOuvrier = false;
                 } else if (roleLower.includes('admin') || roleLower.includes('propri') || roleLower.includes('proprio') || typeLower.includes('admin')) {
                     isAdmin = true;
                     isChef = false;
@@ -485,14 +486,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                     isAdmin = false;
                     isChef = false;
                 }
-            }
-
-            // Force Admin override if email contains "admin" (e.g. admin@test.com)
-            const emailLower = (user.email || '').toLowerCase();
-            if (emailLower.includes('admin')) {
-                isAdmin = true;
-                isChef = false;
-                isOuvrier = false;
+            } else {
+                // If profile not matched in DB and email does not contain "admin", default to Ouvrier mode for security
+                const emailLower = (user.email || '').toLowerCase();
+                if (emailLower.includes('admin')) {
+                    isAdmin = true;
+                    isChef = false;
+                    isOuvrier = false;
+                } else {
+                    isOuvrier = true;
+                    isAdmin = false;
+                    isChef = false;
+                }
             }
 
             // Update profile info in sidebar
@@ -3555,7 +3560,7 @@ function renderHoursRows() {
                                 const isToComplete = p.value === 'À compléter';
                                 const hasHours = p.value !== '00:00' && !isToComplete;
 
-                                const inputHtml = (isAdmin || isChef) ? `
+                                const inputHtml = hasEditPermissionForChantier(p.chantier.id) ? `
                                     <input type="text" class="hour-cell-input ${isToComplete ? 'input-to-complete' : ''}" value="${p.value}" 
                                            data-chantier-id="${p.chantier.id}" data-user-id="${alloc.id}" data-day="${dIdx}"
                                            style="width: 70px; text-align: center; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px;">
