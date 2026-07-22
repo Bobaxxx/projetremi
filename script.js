@@ -5275,7 +5275,7 @@ function exportChantierPDF(chantierId) {
             <!-- Header bar -->
             <div class="report-header">
                 <div class="logo-container">
-                    <img src="logobatir.png" alt="LogoBatir">
+                    <img src="logo.svg" alt="LogoBatir">
                 </div>
                 <div class="report-title-container">
                     <h1 class="report-title">RAPPORT DE CHANTIER</h1>

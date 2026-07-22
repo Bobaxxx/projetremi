@@ -5,3 +5,5 @@ Thumbs.db
 .agents/
 .vscode/
 node_modules/
+
+.env
