@@ -3737,9 +3737,9 @@ function renderHoursRows() {
                                 const inputHtml = hasEditPermissionForChantier(alloc.id) ? `
                                     <input type="text" class="hour-cell-input ${isToComplete ? 'input-to-complete' : ''}" value="${comp.value}" 
                                            data-chantier-id="${alloc.id}" data-user-id="${comp.user.id}" data-day="${dIdx}"
-                                           style="width: 70px; text-align: center; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px;">
+                                           style="width: 100px; flex-shrink: 0; text-align: center; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px;">
                                 ` : `
-                                    <span style="font-weight: 800; color: ${hasHours ? '#16a34a' : '#64748b'};">${comp.value}</span>
+                                    <span style="display: inline-block; width: 100px; text-align: center; flex-shrink: 0; font-weight: 800; color: ${hasHours ? '#16a34a' : '#64748b'};">${comp.value}</span>
                                 `;
 
                                 mobileHtml += `
@@ -3787,9 +3787,9 @@ function renderHoursRows() {
                                 const inputHtml = hasEditPermissionForChantier(p.chantier.id) ? `
                                     <input type="text" class="hour-cell-input ${isToComplete ? 'input-to-complete' : ''}" value="${p.value}" 
                                            data-chantier-id="${p.chantier.id}" data-user-id="${alloc.id}" data-day="${dIdx}"
-                                           style="width: 70px; text-align: center; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px;">
+                                           style="width: 100px; flex-shrink: 0; text-align: center; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px;">
                                 ` : `
-                                    <span style="font-weight: 800; color: ${hasHours ? '#16a34a' : '#64748b'};">${p.value}</span>
+                                    <span style="display: inline-block; width: 100px; text-align: center; flex-shrink: 0; font-weight: 800; color: ${hasHours ? '#16a34a' : '#64748b'};">${p.value}</span>
                                 `;
 
                                 mobileHtml += `
