@@ -13,9 +13,9 @@
     <!-- Supabase client check to prevent page content flashing -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        const SUPABASE_URL = "https://hxnfcqrykmbsqqwugbxc.supabase.co";
-        const SUPABASE_ANON_KEY = "sb_publishable_9SaZgJq1R_Jo7uI3GjC0TA_9kSRZWn5";
-        const localSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        const localSupabaseUrl = "https://hxnfcqrykmbsqqwugbxc.supabase.co";
+        const localSupabaseAnonKey = "sb_publishable_9SaZgJq1R_Jo7uI3GjC0TA_9kSRZWn5";
+        const localSupabase = window.supabase.createClient(localSupabaseUrl, localSupabaseAnonKey, {
             auth: {
                 storage: window.sessionStorage,
                 persistSession: true
