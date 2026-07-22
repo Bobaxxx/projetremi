@@ -2059,8 +2059,15 @@ function renderPlanning() {
 async function deleteUser(userId) {
     if (await showCustomConfirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
         if (useSupabase) {
-            await supabaseClient.from('utilisateurs').delete().eq('id', userId);
-            await loadDataFromSupabase();
+            try {
+                const { error } = await supabaseClient.from('utilisateurs').delete().eq('id', userId);
+                if (error) throw error;
+                await loadDataFromSupabase();
+            } catch (err) {
+                console.error("Erreur lors de la suppression de l'utilisateur :", err);
+                alert("Impossible de supprimer l'utilisateur : " + err.message);
+                return;
+            }
         } else {
             users = users.filter(u => u.id !== userId);
 

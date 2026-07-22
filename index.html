@@ -15,7 +15,7 @@
     <script>
         const SUPABASE_URL = "https://hxnfcqrykmbsqqwugbxc.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_9SaZgJq1R_Jo7uI3GjC0TA_9kSRZWn5";
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        const localSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
             auth: {
                 storage: window.sessionStorage,
                 persistSession: true
@@ -23,7 +23,7 @@
         });
 
         (async () => {
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: { session } } = await localSupabase.auth.getSession();
             const urlParams = new URLSearchParams(window.location.search);
             if (!session && !urlParams.has('role')) {
                 window.location.replace('login.html');
