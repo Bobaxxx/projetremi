@@ -24,7 +24,8 @@ CREATE TABLE utilisateurs (
     role VARCHAR(100) NOT NULL,            -- Ex: 'Maçon', 'Conducteur de travaux', etc.
     type VARCHAR(50) NOT NULL DEFAULT 'Employé', -- Ex: 'Employé', 'Administrateur'
     status VARCHAR(50) NOT NULL DEFAULT 'Actif', -- Ex: 'Actif', 'Inactif'
-    phone VARCHAR(20)
+    phone VARCHAR(20),
+    image TEXT
 );
 
 -- 2. TABLE DES ENTREPRISES
@@ -44,7 +45,8 @@ CREATE TABLE chantiers (
     budget_hours DECIMAL(10, 2) NOT NULL DEFAULT 150.00,
     worked_hours DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     color VARCHAR(7) NOT NULL DEFAULT '#10b981',   -- Code Couleur Hex (ex: #6050f3)
-    entreprise VARCHAR(100)
+    entreprise VARCHAR(100),
+    image TEXT
 );
 
 -- 3. TABLE DES AFFECTATIONS DU PLANNING (FORECAST)

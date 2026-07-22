@@ -387,7 +387,8 @@ async function loadDataFromSupabase() {
                 status: c.status,
                 budgetHours: parseFloat(c.budget_hours) || 0,
                 workedHours: parseFloat(c.worked_hours) || 0,
-                color: c.color
+                color: c.color,
+                image: c.image
             }));
 
             // Restore images from localStorage (persisted separately)
@@ -1407,10 +1408,10 @@ function renderChantiers(filterQuery = '') {
     const query = filterQuery.toLowerCase().trim();
 
     const filteredChantiers = chantiers.filter(c => {
-        return c.name.toLowerCase().includes(query) ||
-            c.client.toLowerCase().includes(query) ||
+        return (c.name && c.name.toLowerCase().includes(query)) ||
+            (c.client && c.client.toLowerCase().includes(query)) ||
             (c.entreprise && c.entreprise.toLowerCase().includes(query)) ||
-            c.address.toLowerCase().includes(query);
+            (c.address && c.address.toLowerCase().includes(query));
     });
 
     tbody.innerHTML = filteredChantiers.map(c => {
@@ -2273,12 +2274,16 @@ function initModals() {
 
                 if (useSupabase) {
                     try {
-                        const { error } = await supabaseClient.from('utilisateurs').update({ firstname, lastname, phone, role, type, color, status }).eq('id', userId);
+                        const updatePayload = { firstname, lastname, phone, role, type, color, status };
+                        if (imgData) updatePayload.image = imgData;
+                        const { error } = await supabaseClient.from('utilisateurs').update(updatePayload).eq('id', userId);
                         if (error) throw error;
                     } catch (err) {
                         console.warn("La modification complète a échoué (colonne color absente dans Supabase). Repli sur les champs de base.", err);
                         // Fallback: update only core fields that are guaranteed to exist
-                        await supabaseClient.from('utilisateurs').update({ firstname, lastname, phone, role, type, status }).eq('id', userId);
+                        const fallbackPayload = { firstname, lastname, phone, role, type, status };
+                        if (imgData) fallbackPayload.image = imgData;
+                        await supabaseClient.from('utilisateurs').update(fallbackPayload).eq('id', userId);
                     }
                     await loadDataFromSupabase();
                 } else {
@@ -2492,6 +2497,7 @@ function initForms() {
                     status: newUser.status,
                     phone: newUser.phone
                 };
+                if (newUser.image) coreUser.image = newUser.image;
                 await supabaseClient.from('utilisateurs').insert([coreUser]);
             }
             await supabaseClient.from('dashboard_activities').insert([{ activity_text: `Nouvel utilisateur ajouté : ${firstname} ${lastname}` }]);
@@ -2591,7 +2597,8 @@ function initForms() {
                 status: newCh.status,
                 budget_hours: newCh.budgetHours,
                 worked_hours: newCh.workedHours,
-                color: newCh.color
+                color: newCh.color,
+                image: newCh.image
             }]);
             await supabaseClient.from('dashboard_activities').insert([{ activity_text: `Nouveau chantier créé : ${name}` }]);
             await loadDataFromSupabase();
@@ -3631,6 +3638,7 @@ function renderHoursRows() {
                         const isCollapsed = collapsedProjects[ch.id] || false;
                         dayAllocs.push({
                             id: ch.id,
+                            chantier: ch,
                             title: ch.name,
                             companionsCount: companionsOnDay.length,
                             companions: companionsOnDay,
@@ -3664,6 +3672,7 @@ function renderHoursRows() {
                     if (userAllocsOnDay.length > 0) {
                         dayAllocs.push({
                             id: u.id,
+                            user: u,
                             title: `${u.firstname} ${u.lastname}`,
                             subtitle: u.role,
                             projects: userAllocsOnDay,
@@ -3693,9 +3702,7 @@ function renderHoursRows() {
                         mobileHtml += `
                             <div class="mobile-planning-card hours-project-toggle-card" data-project-id="${alloc.id}" style="background: white; cursor: pointer;">
                                 <div class="mobile-planning-card-left">
-                                    <div class="initials-bubble" style="background-color: ${alloc.color}; width: 32px; height: 32px; font-size: 11px; line-height: 32px; margin: 0; color: white;">
-                                        ${alloc.initials}
-                                    </div>
+                                    ${getChantierAvatar(alloc.chantier, 32, 'margin: 0;')}
                                     <div style="display: flex; flex-direction: column;">
                                         <span class="mobile-planning-card-title">${alloc.title}</span>
                                         <span style="font-size: 11px; color: var(--accent); font-weight: 700; margin-top: 2px; display: flex; align-items: center; gap: 4px;">
@@ -3723,9 +3730,7 @@ function renderHoursRows() {
                                 mobileHtml += `
                                     <div class="mobile-planning-card" style="background: #f8fafc; padding-left: 36px; border-left: 4px solid var(--accent);">
                                         <div class="mobile-planning-card-left">
-                                            <div class="initials-bubble bubble-violet" style="width: 28px; height: 28px; font-size: 10px; line-height: 28px; margin: 0;">
-                                                ${initialsComp}
-                                            </div>
+                                            ${getUserAvatar(comp.user, 28, 'margin: 0;')}
                                             <div style="display: flex; flex-direction: column;">
                                                 <span style="font-size: 13px; font-weight: 700; color: #334155;">${comp.user.firstname} ${comp.user.lastname}</span>
                                                 <span style="font-size: 11px; color: #64748b;">${comp.user.role}</span>
@@ -3747,9 +3752,7 @@ function renderHoursRows() {
                         mobileHtml += `
                             <div class="mobile-planning-card hours-user-toggle-card" data-user-id="${alloc.id}" style="background: white; cursor: pointer;">
                                 <div class="mobile-planning-card-left">
-                                    <div class="initials-bubble bubble-violet" style="width: 32px; height: 32px; font-size: 11px; line-height: 32px; margin: 0;">
-                                        ${alloc.initials}
-                                    </div>
+                                    ${getUserAvatar(alloc.user, 32, 'margin: 0;')}
                                     <div style="display: flex; flex-direction: column;">
                                         <span class="mobile-planning-card-title">${alloc.title}</span>
                                         <span style="font-size: 11px; color: var(--accent); font-weight: 700; margin-top: 2px; display: flex; align-items: center; gap: 4px;">
@@ -3777,9 +3780,7 @@ function renderHoursRows() {
                                 mobileHtml += `
                                     <div class="mobile-planning-card" style="background: #f8fafc; padding-left: 36px; border-left: 4px solid var(--accent);">
                                         <div class="mobile-planning-card-left">
-                                            <div class="initials-bubble" style="background-color: ${p.chantier.color || '#3b82f6'}; width: 28px; height: 28px; font-size: 9px; line-height: 28px; margin: 0; color: white;">
-                                                ${initialsCh}
-                                            </div>
+                                            ${getChantierAvatar(p.chantier, 28, 'margin: 0;')}
                                             <div style="display: flex; flex-direction: column;">
                                                 <span style="font-size: 13px; font-weight: 700; color: #334155;">${p.chantier.name}</span>
                                                 <span style="font-size: 11px; color: #64748b;">Chantier</span>
@@ -4781,23 +4782,33 @@ async function saveEditChantier(e) {
         // Update database if using Supabase
         if (useSupabase && supabaseClient) {
             try {
+                const updatePayload = {
+                    name,
+                    client,
+                    entreprise,
+                    address: fullAddress || 'Adresse non renseignée',
+                    status,
+                    budget_hours: budgetHours,
+                    color
+                };
+                
+                // Add image to payload only if a new image was provided
+                const editUploader = document.querySelector('#edit-chantier-modal .image-uploader');
+                if (editUploader) {
+                    const imgData = editUploader.getAttribute('data-image-base64');
+                    if (imgData) updatePayload.image = imgData;
+                }
+
                 const { error } = await supabaseClient
                     .from('chantiers')
-                    .update({
-                        name,
-                        client,
-                        entreprise,
-                        address: fullAddress || 'Adresse non renseignée',
-                        status,
-                        budget_hours: budgetHours,
-                        color
-                    })
+                    .update(updatePayload)
                     .eq('id', id);
 
                 if (error) throw error;
                 console.log("Chantier mis à jour avec succès dans Supabase !");
             } catch (err) {
                 console.error("Erreur lors de la mise à jour du chantier dans Supabase :", err);
+                alert("Erreur de sauvegarde Supabase : " + err.message);
             }
         }
 
@@ -5117,7 +5128,7 @@ function exportChantierPDF(chantierId) {
                 }
 
                 .logo-container img {
-                    height: 36px;
+                    height: 50px;
                     filter: brightness(0) saturate(100%) invert(28%) sepia(86%) saturate(1600%) hue-rotate(235deg) brightness(95%) contrast(95%);
                 }
 
