@@ -2305,7 +2305,11 @@ function initModals() {
                     if (idx !== -1) users[idx].image = imgData;
                     const savedImages = JSON.parse(localStorage.getItem('user_images') || '{}');
                     savedImages[userId] = imgData;
-                    localStorage.setItem('user_images', JSON.stringify(savedImages));
+                    try {
+                        localStorage.setItem('user_images', JSON.stringify(savedImages));
+                    } catch (e) {
+                        console.warn("Quota localStorage dépassé pour les images utilisateur.");
+                    }
                 }
 
                 editUserModal.classList.remove('show');
@@ -2520,7 +2524,11 @@ function initForms() {
         if (imgData) {
             const savedImages = JSON.parse(localStorage.getItem('user_images') || '{}');
             savedImages[newUser.id] = imgData;
-            localStorage.setItem('user_images', JSON.stringify(savedImages));
+            try {
+                localStorage.setItem('user_images', JSON.stringify(savedImages));
+            } catch (e) {
+                console.warn("Quota localStorage dépassé pour les images utilisateur.");
+            }
         }
 
         userForm.reset();
@@ -4782,7 +4790,11 @@ async function saveEditChantier(e) {
                 // Persist to localStorage so it survives page refresh
                 const savedImages = JSON.parse(localStorage.getItem('chantier_images') || '{}');
                 savedImages[id] = imgData;
-                localStorage.setItem('chantier_images', JSON.stringify(savedImages));
+                try {
+                    localStorage.setItem('chantier_images', JSON.stringify(savedImages));
+                } catch (e) {
+                    console.warn("Quota localStorage dépassé pour les images chantier.");
+                }
             }
         }
 
