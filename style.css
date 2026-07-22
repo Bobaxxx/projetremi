@@ -2823,7 +2823,7 @@ td:hover .planning-add-btn {
         max-width: 100% !important;
     }
 
-    .form-input, .form-select, .form-textarea, input, select, textarea {
+    .form-input, .form-select, .form-textarea, input:not(.hour-cell-input), select, textarea {
         max-width: 100% !important;
         width: 100% !important;
         box-sizing: border-box !important;
